@@ -68,6 +68,14 @@ namespace video
 			GLuint vbo_indicesSize; //tmp
 		};
 
+		virtual bool convertToOpenGLColors(SHWBufferLink* HWBuffer, c8* vertexBuffer, u32 vertexCount) override;
+		virtual bool subUpdateVertexHardwareBuffer(SHWBufferLink* HWBuffer, c8* vertexBuffer, u32 vertexCount, u32 offset) override;
+		virtual bool subUpdateIndexHardwareBuffer(SHWBufferLink* HWBuffer, c8* indices, u32 indexCount, u32 offset) override;
+		virtual bool getVertexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 vertexCount, u32 offset, c8* resultPtr) override;
+		virtual bool getIndexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 indexCount, u32 offset, c8* resultPtr) override;
+		virtual bool updateVertexHardwareBufferDirect(SHWBufferLink* HWBuffer, c8* vertexBuffer, u32 vertexCount) override;
+		virtual bool updateIndexHardwareBufferDirect(SHWBufferLink* HWBuffer, c8* indices, u32 indexCount) override;
+
 		//! updates hardware buffer if needed
 		bool updateHardwareBuffer(SHWBufferLink *HWBuffer) override;
 

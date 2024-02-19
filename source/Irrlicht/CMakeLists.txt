@@ -43,7 +43,11 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
 	endif()
 
 elseif(MSVC)
-	string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " msvcrt.lib") # ???? fuck off
+	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+		string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " msvcrtd.lib")
+	else()
+		string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " msvcrt.lib") # ???? fuck off
+	endif()
 
 	add_compile_options(/GR- /Zl)
 

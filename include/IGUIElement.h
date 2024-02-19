@@ -53,10 +53,10 @@ public:
 	//! Destructor
 	virtual ~IGUIElement()
 	{
-		for (auto child : Children) {
-			child->Parent = nullptr;
-			child->drop();
-		}
+		IsVisible = false;
+		IsEnabled = false;
+		remove();
+		removeAllChildren();
 	}
 
 
@@ -307,15 +307,18 @@ public:
 	virtual void removeChild(IGUIElement* child)
 	{
 		assert(child->Parent == this);
-		Children.erase(child->ParentPos);
+		auto it = std::find(Children.begin(), Children.end(), child);
+		if (it != Children.end())
+			Children.erase(it);
 		child->Parent = nullptr;
 		child->drop();
 	}
 
 	//! Removes all children.
 	virtual void removeAllChildren() {
-		while (!Children.empty()) {
-			auto child = Children.back();
+		auto allChildren = Children;
+		Children.clear();
+		for (auto child : allChildren) {
 			child->remove();
 		}
 	}
@@ -786,6 +789,7 @@ protected:
 	{
 		if (child)
 		{
+			assert(child != this);
 			child->grab(); // prevent destruction when removed
 			child->remove(); // remove from old parent
 			child->LastParentRect = getAbsolutePosition();

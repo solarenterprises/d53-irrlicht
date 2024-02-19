@@ -340,7 +340,7 @@ namespace video
 			return false;
 		}
 
-	protected:
+	
 		struct SHWBufferLink
 		{
 			SHWBufferLink(const scene::IMeshBuffer *_MeshBuffer)
@@ -373,6 +373,15 @@ namespace video
 		//! Gets hardware buffer link from a meshbuffer (may create or update buffer)
 		virtual SHWBufferLink *getBufferLink(const scene::IMeshBuffer* mb);
 
+		virtual bool convertToOpenGLColors(SHWBufferLink* HWBuffer, c8* vertexBuffer, u32 vertexCount) { return false; };
+		virtual bool subUpdateVertexHardwareBuffer(SHWBufferLink* HWBuffer, c8* vertexBuffer, u32 vertexCount, u32 offset) { return false; }
+		virtual bool subUpdateIndexHardwareBuffer(SHWBufferLink* HWBuffer, c8* indices, u32 indexCount, u32 offset) { return false; };
+		virtual bool getVertexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 vertexCount, u32 offset, c8* resultPtr) { return false; }
+		virtual bool getIndexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 indexCount, u32 offset, c8* resultPtr) { return false; }
+		virtual bool updateVertexHardwareBufferDirect(SHWBufferLink* HWBuffer, c8* vertexBuffer, u32 vertexCount) { return false; }
+		virtual bool updateIndexHardwareBufferDirect(SHWBufferLink* HWBuffer, c8* indices, u32 indexCount) { return false; }
+
+	protected:
 		//! updates hardware buffer if needed  (only some drivers can)
 		virtual bool updateHardwareBuffer(SHWBufferLink *HWBuffer) {return false;}
 

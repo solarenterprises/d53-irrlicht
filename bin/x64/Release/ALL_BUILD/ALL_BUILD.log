@@ -1,0 +1,33 @@
+﻿  1>Building Custom Rule F:/district53/irrlicht/CMakeLists.txt
+  CMake is re-running because F:/district53/irrlicht/bin/CMakeFiles/generate.stamp is out-of-date.
+    the file 'F:/district53/irrlicht/CMakeLists.txt'
+    is newer than 'F:/district53/irrlicht/bin/CMakeFiles/generate.stamp.depend'
+    result='-1'
+  -- Selecting Windows SDK version 10.0.22621.0 to target Windows 10.0.19045.
+  -- *** Building IrrlichtMt 1.9.0.14 ***
+  -- Performing Test REVISION_SANITY_CHECK
+  -- Performing Test REVISION_SANITY_CHECK - Success
+  -- Device: SDL
+  -- OpenGL: ON
+  -- OpenGL 3: ON
+  -- OpenGL ES: OFF
+  -- OpenGL ES 2: OFF
+  -- WebGL: OFF
+  CMake Error at F:/district53/vcpkg/scripts/buildsystems/vcpkg.cmake:859 (_find_package):
+    Could not find a package configuration file provided by "SDL2" with any of
+    the following names:
+  
+      SDL2Config.cmake
+      sdl2-config.cmake
+  
+    Add the installation prefix of "SDL2" to CMAKE_PREFIX_PATH or set
+    "SDL2_DIR" to a directory containing one of the above files.  If "SDL2"
+    provides a separate development package or SDK, be sure it has been
+    installed.
+  Call Stack (most recent call first):
+    source/Irrlicht/CMakeLists.txt:279 (find_package)
+  
+  
+  -- Configuring incomplete, errors occurred!
+  The system cannot find the batch label specified - VCEnd
+C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppCommon.targets(237,5): error MSB8066: Custom build for 'F:\district53\irrlicht\CMakeLists.txt' exited with code 1.

@@ -287,6 +287,287 @@ void COpenGLDriver::setTransform(E_TRANSFORMATION_STATE state, const core::matri
 	}
 }
 
+bool COpenGLDriver::convertToOpenGLColors(SHWBufferLink* HWBuffer, c8* buffer, u32 vertexCount) {
+	if (!FeatureAvailable[IRR_ARB_vertex_array_bgra] && !FeatureAvailable[IRR_EXT_vertex_array_bgra])
+	{
+		const scene::IMeshBuffer* mb = HWBuffer->MeshBuffer;
+		const E_VERTEX_TYPE vType = mb->getVertexType();
+
+		// in order to convert the colors into opengl format (RGBA)
+		switch (vType)
+		{
+		case EVT_STANDARD:
+		{
+			S3DVertex* pb = reinterpret_cast<S3DVertex*>(buffer);
+			for (u32 i = 0; i < vertexCount; i++)
+			{
+				pb[i].Color.toOpenGLColor((u8*)&(pb[i].Color));
+			}
+		}
+		break;
+		case EVT_2TCOORDS:
+		{
+			S3DVertex2TCoords* pb = reinterpret_cast<S3DVertex2TCoords*>(buffer);
+			for (u32 i = 0; i < vertexCount; i++)
+			{
+				pb[i].Color.toOpenGLColor((u8*)&(pb[i].Color));
+			}
+		}
+		break;
+		case EVT_TANGENTS:
+		{
+			S3DVertexTangents* pb = reinterpret_cast<S3DVertexTangents*>(buffer);
+			for (u32 i = 0; i < vertexCount; i++)
+			{
+				pb[i].Color.toOpenGLColor((u8*)&(pb[i].Color));
+			}
+		}
+		break;
+		default:
+		{
+			return false;
+		}
+		}
+	}
+
+	return true;
+}
+
+bool COpenGLDriver::subUpdateVertexHardwareBuffer(SHWBufferLink* HWBuffer, c8* vertexBuffer, u32 vertexCount, u32 offset)
+{
+	const scene::IMeshBuffer* mb = HWBuffer->MeshBuffer;
+	const E_VERTEX_TYPE vType = mb->getVertexType();
+
+	const u32 vertexSize = getVertexPitchFromType(vType);
+
+	SHWBufferLink_opengl* SHWBuffer = (SHWBufferLink_opengl*)HWBuffer;
+	if (!SHWBuffer->vbo_verticesID) {
+		return false;
+	}
+
+	extGlBindBuffer(GL_ARRAY_BUFFER, SHWBuffer->vbo_verticesID);
+	extGlBufferSubData(GL_ARRAY_BUFFER, offset * vertexSize, vertexCount * vertexSize, vertexBuffer);
+	extGlBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	return (!testGLError(__LINE__));
+}
+
+bool COpenGLDriver::subUpdateIndexHardwareBuffer(SHWBufferLink* HWBuffer, c8* indices, u32 indexCount, u32 offset)
+{
+	const scene::IMeshBuffer* mb = HWBuffer->MeshBuffer;
+
+	GLenum indexSize;
+	switch (mb->getIndexType())
+	{
+		case EIT_16BIT:
+		{
+			indexSize = sizeof(u16);
+			break;
+		}
+		case EIT_32BIT:
+		{
+			indexSize = sizeof(u32);
+			break;
+		}
+		default:
+		{
+			return false;
+		}
+	}
+
+	SHWBufferLink_opengl* SHWBuffer = (SHWBufferLink_opengl*)HWBuffer;
+	if (!SHWBuffer->vbo_indicesID) {
+		return false;
+	}
+
+	extGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, SHWBuffer->vbo_indicesID);
+
+	// copy data to graphics card
+	extGlBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * indexSize, indexCount * indexSize, indices);
+
+	extGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	return (!testGLError(__LINE__));
+}
+
+bool COpenGLDriver::getVertexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 vertexCount, u32 offset, c8* resultPtr)
+{
+	const scene::IMeshBuffer* mb = HWBuffer->MeshBuffer;
+	const E_VERTEX_TYPE vType = mb->getVertexType();
+
+	const u32 vertexSize = getVertexPitchFromType(vType);
+
+	SHWBufferLink_opengl* SHWBuffer = (SHWBufferLink_opengl*)HWBuffer;
+	if (!SHWBuffer->vbo_verticesID) {
+		return false;
+	}
+
+	extGlBindBuffer(GL_ARRAY_BUFFER, SHWBuffer->vbo_verticesID);
+	extGlGetBufferSubData(GL_ARRAY_BUFFER, offset * vertexSize, vertexCount * vertexSize, resultPtr);
+	extGlBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	return (!testGLError(__LINE__));
+}
+
+bool COpenGLDriver::getIndexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 indexCount, u32 offset, c8* resultPtr)
+{
+	const scene::IMeshBuffer* mb = HWBuffer->MeshBuffer;
+
+	GLenum indexSize;
+	switch (mb->getIndexType())
+	{
+	case EIT_16BIT:
+	{
+		indexSize = sizeof(u16);
+		break;
+	}
+	case EIT_32BIT:
+	{
+		indexSize = sizeof(u32);
+		break;
+	}
+	default:
+	{
+		return false;
+	}
+	}
+
+	SHWBufferLink_opengl* SHWBuffer = (SHWBufferLink_opengl*)HWBuffer;
+	if (!SHWBuffer->vbo_indicesID) {
+		return false;
+	}
+
+	extGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, SHWBuffer->vbo_indicesID);
+	extGlGetBufferSubData(GL_ELEMENT_ARRAY_BUFFER, offset * indexSize, indexCount * indexSize, resultPtr);
+	extGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	return (!testGLError(__LINE__));
+}
+
+bool COpenGLDriver::updateVertexHardwareBufferDirect(SHWBufferLink* _HWBuffer, c8* vertexBuffer, u32 vertexCount)
+{
+	SHWBufferLink_opengl* HWBuffer = (SHWBufferLink_opengl*)_HWBuffer;
+	if (!HWBuffer)
+		return false;
+
+	if (!FeatureAvailable[IRR_ARB_vertex_buffer_object])
+		return false;
+
+#if defined(GL_ARB_vertex_buffer_object)
+	const scene::IMeshBuffer* mb = HWBuffer->MeshBuffer;
+	const E_VERTEX_TYPE vType = mb->getVertexType();
+	const u32 vertexSize = getVertexPitchFromType(vType);
+
+	//get or create buffer
+	bool newBuffer = false;
+	if (!HWBuffer->vbo_verticesID)
+	{
+		extGlGenBuffers(1, &HWBuffer->vbo_verticesID);
+		if (!HWBuffer->vbo_verticesID)
+			return false;
+		newBuffer = true;
+	}
+	else if (HWBuffer->vbo_verticesSize < vertexCount * vertexSize)
+	{
+		newBuffer = true;
+	}
+
+	extGlBindBuffer(GL_ARRAY_BUFFER, HWBuffer->vbo_verticesID);
+
+	// copy data to graphics card
+	if (!newBuffer)
+		extGlBufferSubData(GL_ARRAY_BUFFER, 0, vertexCount * vertexSize, vertexBuffer);
+	else
+	{
+		HWBuffer->vbo_verticesSize = vertexCount * vertexSize;
+
+		if (HWBuffer->Mapped_Vertex == scene::EHM_STATIC)
+			extGlBufferData(GL_ARRAY_BUFFER, vertexCount * vertexSize, vertexBuffer, GL_STATIC_DRAW);
+		else if (HWBuffer->Mapped_Vertex == scene::EHM_DYNAMIC)
+			extGlBufferData(GL_ARRAY_BUFFER, vertexCount * vertexSize, vertexBuffer, GL_DYNAMIC_DRAW);
+		else //scene::EHM_STREAM
+			extGlBufferData(GL_ARRAY_BUFFER, vertexCount * vertexSize, vertexBuffer, GL_STREAM_DRAW);
+	}
+
+	extGlBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	return (!testGLError(__LINE__));
+#else
+return false;
+#endif
+}
+
+bool COpenGLDriver::updateIndexHardwareBufferDirect(SHWBufferLink* _HWBuffer, c8* indices, u32 indexCount)
+{
+	SHWBufferLink_opengl* HWBuffer = (SHWBufferLink_opengl*)_HWBuffer;
+	if (!HWBuffer)
+		return false;
+
+	if (!FeatureAvailable[IRR_ARB_vertex_buffer_object])
+		return false;
+
+#if defined(GL_ARB_vertex_buffer_object)
+	const scene::IMeshBuffer* mb = HWBuffer->MeshBuffer;
+
+	GLenum indexSize;
+	switch (mb->getIndexType())
+	{
+	case EIT_16BIT:
+	{
+		indexSize = sizeof(u16);
+		break;
+	}
+	case EIT_32BIT:
+	{
+		indexSize = sizeof(u32);
+		break;
+	}
+	default:
+	{
+		return false;
+	}
+	}
+
+
+	//get or create buffer
+	bool newBuffer = false;
+	if (!HWBuffer->vbo_indicesID)
+	{
+		extGlGenBuffers(1, &HWBuffer->vbo_indicesID);
+		if (!HWBuffer->vbo_indicesID)
+			return false;
+		newBuffer = true;
+	}
+	else if (HWBuffer->vbo_indicesSize < indexCount * indexSize)
+	{
+		newBuffer = true;
+	}
+
+	extGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, HWBuffer->vbo_indicesID);
+
+	// copy data to graphics card
+	if (!newBuffer)
+		extGlBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, indexCount * indexSize, indices);
+	else
+	{
+		HWBuffer->vbo_indicesSize = indexCount * indexSize;
+
+		if (HWBuffer->Mapped_Index == scene::EHM_STATIC)
+			extGlBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * indexSize, indices, GL_STATIC_DRAW);
+		else if (HWBuffer->Mapped_Index == scene::EHM_DYNAMIC)
+			extGlBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * indexSize, indices, GL_DYNAMIC_DRAW);
+		else //scene::EHM_STREAM
+			extGlBufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * indexSize, indices, GL_STREAM_DRAW);
+	}
+
+	extGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	return (!testGLError(__LINE__));
+#else
+	return false;
+#endif
+}
+	
 
 bool COpenGLDriver::updateVertexHardwareBuffer(SHWBufferLink_opengl *HWBuffer)
 {
