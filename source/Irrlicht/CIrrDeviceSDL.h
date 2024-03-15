@@ -260,7 +260,7 @@ namespace irr
 				}
 			};
 			std::vector<std::unique_ptr<SDL_Cursor, CursorDeleter>> Cursors;
-			gui::ECURSOR_ICON ActiveIcon;
+			gui::ECURSOR_ICON ActiveIcon = gui::ECURSOR_ICON::ECI_NORMAL;
 		};
 
 	private:
@@ -302,6 +302,8 @@ namespace irr
 		u32 Width, Height;
 
 		bool Resizable;
+
+		core::rect<s32> lastElemPos;
 
 		struct SKeyMap
 		{

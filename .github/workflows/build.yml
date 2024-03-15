@@ -10,7 +10,7 @@ jobs:
   linux-gl:
     runs-on: ubuntu-20.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install deps
         run: |
           sudo apt-get update
@@ -30,7 +30,7 @@ jobs:
           make DESTDIR=$PWD/_install install
           tar -c -I "gzip -9" -f irrlicht-linux.tar.gz -C ./_install/usr/local .
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: irrlicht-linux
           path: ./irrlicht-linux.tar.gz
@@ -39,7 +39,7 @@ jobs:
     # Xvfb test is broken on 20.04 for unknown reasons (not our bug)
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install deps
         run: |
           sudo apt-get update
@@ -61,9 +61,10 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE=true xvfb-run ./AutomatedTest ogles2
 
   linux-sdl:
-    runs-on: ubuntu-20.04
+    # something is wrong with the SDL cmake files on 20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install deps
         run: |
           sudo apt-get update
@@ -71,7 +72,7 @@ jobs:
 
       - name: Build
         run: |
-          cmake . -DBUILD_EXAMPLES=1 -DUSE_SDL2=ON
+          cmake . -DBUILD_EXAMPLES=1 -DUSE_SDL2=ON -DCMAKE_BUILD_TYPE=Debug
           make -j2
 
       - name: Test (headless)
@@ -83,7 +84,7 @@ jobs:
     # Xvfb test is broken on 20.04 for unknown reasons (not our bug)
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install deps
         run: |
           sudo apt-get update
@@ -105,9 +106,10 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE=true xvfb-run ./AutomatedTest opengl3
 
   linux-sdl-gles2:
-    runs-on: ubuntu-20.04
+    # something is wrong with the SDL cmake files on 20.04
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install deps
         run: |
           sudo apt-get update
@@ -140,21 +142,21 @@ jobs:
           - {variant: win32, arch: i686, extras: "-sdl"}
           - {variant: win64, arch: x86_64, extras: "-sdl"}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install compiler
         run: |
           sudo apt-get update && sudo apt-get install cmake -qyy
-          ./scripts/ci-get-mingw.sh ${{matrix.config.arch}}
+          ./scripts/ci-get-mingw.sh
 
       - name: Build
         run: |
           ./scripts/ci-build-mingw.sh package
         env:
-          CC: ${{matrix.config.arch}}-w64-mingw32-gcc
-          CXX: ${{matrix.config.arch}}-w64-mingw32-g++
+          CC: ${{matrix.config.arch}}-w64-mingw32-clang
+          CXX: ${{matrix.config.arch}}-w64-mingw32-clang++
           extras: ${{matrix.config.extras}}
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: irrlicht-${{matrix.config.variant}}${{matrix.config.extras}}
           path: ./irrlicht-${{matrix.config.variant}}${{matrix.config.extras}}.zip
@@ -162,7 +164,7 @@ jobs:
   macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install deps
         run: |
           brew update
@@ -180,7 +182,7 @@ jobs:
   macos-sdl:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Install deps
         run: |
           brew update
@@ -197,7 +199,7 @@ jobs:
     env:
       VCPKG_VERSION: 8eb57355a4ffb410a2e94c07b4dca2dffbee8e50
       # 2023.10.19
-      vcpkg_packages: zlib libpng libjpeg-turbo opengl-registry
+      vcpkg_packages: zlib libpng libjpeg-turbo
     strategy:
       fail-fast: false
       matrix:
@@ -214,6 +216,7 @@ jobs:
           -
             use: FALSE
             label: '(no SDL)'
+            vcpkg_packages: opengl-registry
           -
             use: TRUE
             label: '(with SDL)'
@@ -221,7 +224,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Restore from cache and run vcpkg
         uses: lukka/run-vcpkg@v7
@@ -254,9 +257,9 @@ jobs:
         run: move include artifact/
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: msvc-${{ matrix.config.arch }}
+          name: msvc-${{ matrix.config.arch }}-${{matrix.sdl.use}}
           path: artifact/
 
   android:
@@ -270,7 +273,7 @@ jobs:
         arch: [armeabi-v7a, arm64-v8a, x86, x86_64]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install deps
         run: |
@@ -280,7 +283,7 @@ jobs:
 
       - name: Cache NDK
         id: cache-ndk
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           key: android-ndk-${{ env.ndk_version }}-linux
           path: ${{ env.ANDROID_NDK }}
@@ -297,7 +300,7 @@ jobs:
         run: ./scripts/ci-build-android.sh ${{ matrix.arch }}
 
       #- name: Upload Artifact
-      #  uses: actions/upload-artifact@v3
+      #  uses: actions/upload-artifact@v4
       #  with:
       #    name: irrlicht-android-${{ matrix.arch }}
       #    path: ${{ runner.temp }}/pkg/${{ matrix.arch }}

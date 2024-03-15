@@ -2,8 +2,7 @@
 // This file is part of the "Irrlicht Engine".
 // For conditions of distribution and use, see copyright notice in irrlicht.h
 
-#ifndef __S_MATERIAL_H_INCLUDED__
-#define __S_MATERIAL_H_INCLUDED__
+#pragma once
 
 #include "SColor.h"
 #include "matrix4.h"
@@ -193,16 +192,9 @@ namespace video
 		EAAM_SIMPLE=1,
 		//! High-quality anti-aliasing, not always supported, automatically enables SIMPLE mode
 		EAAM_QUALITY=3,
-		//! Line smoothing
-		//! Careful, enabling this can lead to software emulation under OpenGL
-		EAAM_LINE_SMOOTH=4,
-		//! point smoothing, often in software and slow, only with OpenGL
-		EAAM_POINT_SMOOTH=8,
-		//! All typical anti-alias and smooth modes
-		EAAM_FULL_BASIC=15,
 		//! Enhanced anti-aliasing for transparent materials
 		/** Usually used with EMT_TRANSPARENT_ALPHA_CHANNEL_REF and multisampling. */
-		EAAM_ALPHA_TO_COVERAGE=16
+		EAAM_ALPHA_TO_COVERAGE=4
 	};
 
 	//! These flags allow to define the interpretation of vertex color when lighting is enabled
@@ -578,5 +570,3 @@ namespace video
 	IRRLICHT_API extern SMaterial IdentityMaterial;
 } // end namespace video
 } // end namespace irr
-
-#endif

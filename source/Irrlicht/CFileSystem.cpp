@@ -25,10 +25,10 @@
 	#include <io.h> // for _access
 	#include <tchar.h>
 #elif (defined(_IRR_POSIX_API_) || defined(_IRR_OSX_PLATFORM_) || defined(_IRR_ANDROID_PLATFORM_))
-		#include <stdio.h>
-		#include <stdlib.h>
-		#include <string.h>
-		#include <limits.h>
+		#include <cstdio>
+		#include <cstdlib>
+		#include <cstring>
+		#include <climits>
 		#include <sys/types.h>
 		#include <dirent.h>
 		#include <sys/stat.h>
@@ -745,15 +745,10 @@ IFileList* CFileSystem::createFileList()
 
 		r = new CFileList(Path, true, false);
 
-		// TODO: Should be unified once mingw adapts the proper types
-#if defined(__GNUC__)
-		long hFile; //mingw return type declaration
-#else
+        // intptr_t is optional but supported by MinGW since 2007 or earlier.
 		intptr_t hFile;
-#endif
-
 		struct _tfinddata_t c_file;
-		if( (hFile = _tfindfirst( _T("*"), &c_file )) != -1L )
+		if( (hFile = _tfindfirst( _T("*"), &c_file )) != (intptr_t)(-1L) )
 		{
 			do
 			{

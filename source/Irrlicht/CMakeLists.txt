@@ -180,7 +180,8 @@ else()
 		set(DEFAULT_WEBGL1 TRUE)
 	endif()
 	option(ENABLE_GLES2 "Enable OpenGL ES 2+" ${DEFAULT_GLES2})
-	option(ENABLE_WEBGL1 "Enable WebGL (requires GLES2)" ${DEFAULT_WEBGL1})
+	#option(ENABLE_WEBGL1 "Enable WebGL (requires GLES2)" ${DEFAULT_WEBGL1})
+	set(ENABLE_WEBGL1 FALSE) # not working currently
 	if(ENABLE_WEBGL1)
 		set(ENABLE_GLES2 TRUE)
 	endif()
@@ -188,15 +189,13 @@ endif()
 
 if(ENABLE_OPENGL)
 	add_definitions(-D_IRR_COMPILE_WITH_OPENGL_)
-	set(OPENGL_DIRECT_LINK TRUE) # not yet possible to remove this
+	set(OPENGL_DIRECT_LINK TRUE) # driver relies on this
 	if(DEVICE STREQUAL "WINDOWS")
-		add_definitions(-D_IRR_COMPILE_WITH_WGL_MANAGER_ -D_IRR_OPENGL_USE_EXTPOINTER_)
+		add_definitions(-D_IRR_COMPILE_WITH_WGL_MANAGER_)
 	elseif(DEVICE STREQUAL "X11")
-		add_definitions(-D_IRR_COMPILE_WITH_GLX_MANAGER_ -D_IRR_OPENGL_USE_EXTPOINTER_)
+		add_definitions(-D_IRR_COMPILE_WITH_GLX_MANAGER_)
 	elseif(DEVICE STREQUAL "OSX")
 		add_definitions(-D_IRR_COMPILE_WITH_NSOGL_MANAGER_)
-	elseif(DEVICE STREQUAL "SDL")
-		add_definitions(-D_IRR_OPENGL_USE_EXTPOINTER_)
 	endif()
 endif()
 
@@ -204,9 +203,6 @@ if(ENABLE_OPENGL3)
 	if (NOT USE_SDL2)
 		message(FATAL_ERROR "OpenGL 3 driver requires SDL2")
 	endif()
-	set(OPENGL_DIRECT_LINK TRUE) # TODO
-	set(USE_SDLGL ON)
-	set(USE_SDLGL3 ON)
 endif()
 
 if(ENABLE_GLES1)
@@ -216,19 +212,14 @@ if(ENABLE_GLES1)
 	add_definitions(-D_IRR_COMPILE_WITH_OGLES1_)
 	set(OPENGLES_DIRECT_LINK TRUE)
 	if(DEVICE MATCHES "^(WINDOWS|X11|ANDROID)$")
-		add_definitions(-D_IRR_COMPILE_WITH_EGL_MANAGER_ -D_IRR_OGLES1_USE_EXTPOINTER_)
+		add_definitions(-D_IRR_COMPILE_WITH_EGL_MANAGER_)
 	endif()
 endif()
 
 if(ENABLE_GLES2)
 	add_definitions(-D_IRR_COMPILE_WITH_OGLES2_)
-	set(OPENGLES2_DIRECT_LINK TRUE) # not yet possible to remove this
 	if(DEVICE MATCHES "^(WINDOWS|X11|ANDROID)$" OR EMSCRIPTEN)
-		add_definitions(-D_IRR_COMPILE_WITH_EGL_MANAGER_ -D_IRR_OGLES2_USE_EXTPOINTER_)
-	elseif(DEVICE STREQUAL "SDL")
-		add_definitions(-D_IRR_OGLES2_USE_EXTPOINTER_)
-		set(USE_SDLGL ON)
-		set(USE_SDLGLES2 ON)
+		add_definitions(-D_IRR_COMPILE_WITH_EGL_MANAGER_)
 	endif()
 endif()
 
@@ -250,14 +241,12 @@ message(STATUS "Device: ${DEVICE}")
 message(STATUS "OpenGL: ${ENABLE_OPENGL}")
 message(STATUS "OpenGL 3: ${ENABLE_OPENGL3}")
 message(STATUS "OpenGL ES: ${ENABLE_GLES1}")
-if (USE_SDLGLES2)
+if (ENABLE_GLES2)
 	message(STATUS "OpenGL ES 2: ON (unified)")
-elseif (ENABLE_GLES2)
-	message(STATUS "OpenGL ES 2: ON (legacy)")
 else()
 	message(STATUS "OpenGL ES 2: OFF")
 endif()
-message(STATUS "WebGL: ${ENABLE_WEBGL1}")
+#message(STATUS "WebGL: ${ENABLE_WEBGL1}")
 
 # Required libs
 
@@ -280,8 +269,26 @@ if(ENABLE_OPENGL OR ENABLE_OPENGL3)
 	find_package(OpenGL REQUIRED)
 endif()
 if(USE_SDL2)
-	find_package(SDL2 CONFIG REQUIRED)
+	find_package(SDL2 2.0.10 CONFIG REQUIRED)
 	message(STATUS "Found SDL2: ${SDL2_LIBRARIES}")
+endif()
+
+# More special config
+
+if(ENABLE_OPENGL AND DEVICE STREQUAL "SDL")
+	# The legacy GL driver requires some symbols from GL 4.5 to compile,
+	# which SDL only provides since 2.26.0 (Nov 2022).
+	# We have a fallback in case this isn't satisfied so test for it.
+	set(CMAKE_REQUIRED_INCLUDES ${SDL2_INCLUDE_DIRS})
+	unset(CHECK_GL_VERSION_4_5 CACHE)
+	check_cxx_source_compiles("#include <SDL_opengl.h>\n\
+#ifndef GL_VERSION_4_5\n\
+#error\n\
+#endif\n\
+int main() {}" CHECK_GL_VERSION_4_5)
+	if(CHECK_GL_VERSION_4_5)
+		add_definitions(-DIRR_PREFER_SDL_GL_HEADER)
+	endif()
 endif()
 
 # Platform-specific libs
@@ -354,12 +361,13 @@ set(IRRDRVROBJ
 	mt_opengl_loader.cpp
 )
 
+# the two legacy drivers
+
 if(ENABLE_OPENGL)
 	set(IRRDRVROBJ
 		${IRRDRVROBJ}
 		COpenGLCacheHandler.cpp
 		COpenGLDriver.cpp
-		COpenGLShaderMaterialRenderer.cpp
 		COpenGLSLMaterialRenderer.cpp
 		COpenGLExtensionHandler.cpp
 	)
@@ -370,6 +378,33 @@ if(ENABLE_GLES1)
 		${IRRDRVROBJ}
 		COGLESDriver.cpp
 		COGLESExtensionHandler.cpp
+	)
+endif()
+
+# the unified drivers
+
+if(ENABLE_OPENGL3 OR ENABLE_GLES2)
+	set(IRRDRVROBJ
+		${IRRDRVROBJ}
+		OpenGL/Driver.cpp
+		OpenGL/ExtensionHandler.cpp
+		OpenGL/FixedPipelineRenderer.cpp
+		OpenGL/MaterialRenderer.cpp
+		OpenGL/Renderer2D.cpp
+	)
+endif()
+
+if(ENABLE_OPENGL3)
+	set(IRRDRVROBJ
+		${IRRDRVROBJ}
+		OpenGL3/Driver.cpp
+	)
+endif()
+
+if(ENABLE_GLES2)
+	set(IRRDRVROBJ
+		${IRRDRVROBJ}
+		OpenGLES2/Driver.cpp
 	)
 endif()
 
@@ -389,37 +424,6 @@ add_library(IRRVIDEOOBJ OBJECT
 	${IRRDRVROBJ}
 	${IRRIMAGEOBJ}
 )
-
-if(USE_SDLGL)
-	target_sources(IRRVIDEOOBJ PRIVATE
-		OpenGL/Driver.cpp
-		OpenGL/ExtensionHandler.cpp
-		OpenGL/FixedPipelineRenderer.cpp
-		OpenGL/MaterialRenderer.cpp
-		OpenGL/Renderer2D.cpp
-	)
-endif()
-
-if(USE_SDLGL3)
-	target_sources(IRRVIDEOOBJ PRIVATE
-		OpenGL3/Driver.cpp
-	)
-endif()
-
-if(USE_SDLGLES2)
-	target_sources(IRRVIDEOOBJ PRIVATE
-		OpenGLES2/Driver.cpp
-	)
-elseif(ENABLE_GLES2)
-	target_sources(IRRVIDEOOBJ PRIVATE
-		COGLES2Driver.cpp
-		COGLES2ExtensionHandler.cpp
-		COGLES2FixedPipelineRenderer.cpp
-		COGLES2MaterialRenderer.cpp
-		COGLES2Renderer2D.cpp
-		CWebGL1Driver.cpp
-	)
-endif()
 
 add_library(IRRIOOBJ OBJECT
 	CFileList.cpp
@@ -523,11 +527,10 @@ target_link_libraries(IrrlichtMt PRIVATE
 	${ZLIB_LIBRARY}
 	${JPEG_LIBRARY}
 	${PNG_LIBRARY}
-	"$<$<BOOL:${USE_SDL2}>:${SDL2_LIBRARIES}>"
+	"$<$<BOOL:${USE_SDL2}>:SDL2::SDL2>"
 
 	"$<$<BOOL:${OPENGL_DIRECT_LINK}>:${OPENGL_LIBRARIES}>"
 	"$<$<BOOL:${OPENGLES_DIRECT_LINK}>:${OPENGLES_LIBRARY}>"
-	"$<$<BOOL:${OPENGLES2_DIRECT_LINK}>:${OPENGLES2_LIBRARIES}>"
 	${EGL_LIBRARY}
 
 	"$<$<PLATFORM_ID:Android>:-landroid -llog>"

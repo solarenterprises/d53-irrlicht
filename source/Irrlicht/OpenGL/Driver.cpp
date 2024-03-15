@@ -205,7 +205,7 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 
 		// print renderer information
 		VendorName = GL.GetString(GL_VENDOR);
-		os::Printer::log(VendorName.c_str(), ELL_INFORMATION);
+		os::Printer::log("Vendor", VendorName.c_str(), ELL_INFORMATION);
 
 		Version = getVersionFromOpenGL();
 	}
@@ -222,6 +222,7 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 	{
 		initVersion();
 		initFeatures();
+		printTextureFormats();
 
 		// reset cache handler
 		delete CacheHandler;
@@ -276,6 +277,22 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 		return true;
 	}
 
+	void COpenGL3DriverBase::printTextureFormats()
+	{
+		char buf[128];
+		for (u32 i = 0; i < static_cast<u32>(ECF_UNKNOWN); i++) {
+			auto &info = TextureFormats[i];
+			if (!info.InternalFormat) {
+				snprintf_irr(buf, sizeof(buf), "%s -> unsupported", ColorFormatNames[i]);
+			} else {
+				snprintf_irr(buf, sizeof(buf), "%s -> %#06x %#06x %#06x%s",
+					ColorFormatNames[i], info.InternalFormat, info.PixelFormat,
+					info.PixelType, info.Converter ? " (c)" : "");
+			}
+			os::Printer::log(buf, ELL_DEBUG);
+		}
+	}
+
 	void COpenGL3DriverBase::loadShaderData(const io::path& vertexShaderName, const io::path& fragmentShaderName, c8** vertexShaderData, c8** fragmentShaderData)
 	{
 		io::path vsPath(OGLES2ShaderPath);
@@ -290,9 +307,9 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 		io::IReadFile* vsFile = FileSystem->createAndOpenFile(vsPath);
 		if ( !vsFile )
 		{
-			core::stringw warning(L"Warning: Missing shader files needed to simulate fixed function materials:\n");
-			warning += core::stringw(vsPath) + L"\n";
-			warning += L"Shaderpath can be changed in SIrrCreationParamters::OGLES2ShaderPath";
+			std::string warning("Warning: Missing shader files needed to simulate fixed function materials:\n");
+			warning.append(vsPath.c_str()).append("\n");
+			warning += "Shaderpath can be changed in SIrrCreationParamters::OGLES2ShaderPath";
 			os::Printer::log(warning.c_str(), ELL_WARNING);
 			return;
 		}
@@ -300,9 +317,9 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 		io::IReadFile* fsFile = FileSystem->createAndOpenFile(fsPath);
 		if ( !fsFile )
 		{
-			core::stringw warning(L"Warning: Missing shader files needed to simulate fixed function materials:\n");
-			warning += core::stringw(fsPath) + L"\n";
-			warning += L"Shaderpath can be changed in SIrrCreationParamters::OGLES2ShaderPath";
+			std::string warning("Warning: Missing shader files needed to simulate fixed function materials:\n");
+			warning.append(fsPath.c_str()).append("\n");
+			warning += "Shaderpath can be changed in SIrrCreationParamters::OGLES2ShaderPath";
 			os::Printer::log(warning.c_str(), ELL_WARNING);
 			return;
 		}
@@ -313,6 +330,10 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 			*vertexShaderData = new c8[size+1];
 			vsFile->read(*vertexShaderData, size);
 			(*vertexShaderData)[size] = 0;
+		}
+		{
+			auto tmp = std::string("Loaded ") + std::to_string(size) + " bytes for vertex shader " + vertexShaderName.c_str();
+			os::Printer::log(tmp.c_str(), ELL_INFORMATION);
 		}
 
 		size = fsFile->getSize();
@@ -325,6 +346,10 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 			*fragmentShaderData = new c8[size+1];
 			fsFile->read(*fragmentShaderData, size);
 			(*fragmentShaderData)[size] = 0;
+		}
+		{
+			auto tmp = std::string("Loaded ") + std::to_string(size) + " bytes for fragment shader " + fragmentShaderName.c_str();
+			os::Printer::log(tmp.c_str(), ELL_INFORMATION);
 		}
 
 		vsFile->drop();
@@ -478,10 +503,12 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 		{
 			HWBuffer->vbo_verticesSize = bufferSize;
 
-			if (HWBuffer->Mapped_Vertex == scene::EHM_STATIC)
-				GL.BufferData(GL_ARRAY_BUFFER, bufferSize, buffer, GL_STATIC_DRAW);
-			else
-				GL.BufferData(GL_ARRAY_BUFFER, bufferSize, buffer, GL_DYNAMIC_DRAW);
+			GLenum usage = GL_STATIC_DRAW;
+			if (HWBuffer->Mapped_Index == scene::EHM_STREAM)
+				usage = GL_STREAM_DRAW;
+			else if (HWBuffer->Mapped_Index == scene::EHM_DYNAMIC)
+				usage = GL_DYNAMIC_DRAW;
+			GL.BufferData(GL_ARRAY_BUFFER, bufferSize, buffer, usage);
 		}
 
 		GL.BindBuffer(GL_ARRAY_BUFFER, 0);
@@ -541,10 +568,12 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 		{
 			HWBuffer->vbo_indicesSize = indexCount * indexSize;
 
-			if (HWBuffer->Mapped_Index == scene::EHM_STATIC)
-				GL.BufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * indexSize, indices, GL_STATIC_DRAW);
-			else
-				GL.BufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * indexSize, indices, GL_DYNAMIC_DRAW);
+			GLenum usage = GL_STATIC_DRAW;
+			if (HWBuffer->Mapped_Index == scene::EHM_STREAM)
+				usage = GL_STREAM_DRAW;
+			else if (HWBuffer->Mapped_Index == scene::EHM_DYNAMIC)
+				usage = GL_DYNAMIC_DRAW;
+			GL.BufferData(GL_ELEMENT_ARRAY_BUFFER, indexCount * indexSize, indices, usage);
 		}
 
 		GL.BindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -1611,7 +1640,7 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 
 
 	//! \return Returns the name of the video driver.
-	const wchar_t* COpenGL3DriverBase::getName() const
+	const char* COpenGL3DriverBase::getName() const
 	{
 		return Name.c_str();
 	}
@@ -1687,18 +1716,6 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 		return -1;
 	}
 
-	//! Sets a vertex shader constant.
-	void COpenGL3DriverBase::setVertexShaderConstant(const f32* data, s32 startRegister, s32 constantAmount)
-	{
-		os::Printer::log("Error: Please call services->setVertexShaderConstant(), not VideoDriver->setPixelShaderConstant().");
-	}
-
-	//! Sets a pixel shader constant.
-	void COpenGL3DriverBase::setPixelShaderConstant(const f32* data, s32 startRegister, s32 constantAmount)
-	{
-		os::Printer::log("Error: Please call services->setPixelShaderConstant(), not VideoDriver->setPixelShaderConstant().");
-	}
-
 	//! Sets a constant for the vertex shader based on an index.
 	bool COpenGL3DriverBase::setVertexShaderConstant(s32 index, const f32* floats, int count)
 	{
@@ -1738,18 +1755,6 @@ COpenGL3DriverBase::~COpenGL3DriverBase()
 		os::Printer::log("Error: Please call services->setPixelShaderConstant(), not VideoDriver->setPixelShaderConstant().");
 		return false;
 	}
-
-	//! Adds a new material renderer to the VideoDriver, using pixel and/or
-	//! vertex shaders to render geometry.
-	s32 COpenGL3DriverBase::addShaderMaterial(const c8* vertexShaderProgram,
-			const c8* pixelShaderProgram,
-			IShaderConstantSetCallBack* callback,
-			E_MATERIAL_TYPE baseMaterial, s32 userData)
-	{
-		os::Printer::log("No shader support.");
-		return -1;
-	}
-
 
 	//! Adds a new material renderer to the VideoDriver, using GLSL to render geometry.
 	s32 COpenGL3DriverBase::addHighLevelShaderMaterial(

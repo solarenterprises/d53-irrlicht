@@ -13,7 +13,6 @@
 
 #include "COpenGLCacheHandler.h"
 #include "COpenGLMaterialRenderer.h"
-#include "COpenGLShaderMaterialRenderer.h"
 #include "COpenGLSLMaterialRenderer.h"
 
 #include "COpenGLCoreTexture.h"
@@ -45,14 +44,13 @@ bool COpenGLDriver::initDriver()
 	ContextManager->generateContext();
 	ExposedData = ContextManager->getContext();
 	ContextManager->activateContext(ExposedData, false);
+	GL.LoadAllProcedures(ContextManager);
 
 	genericDriverInit();
 
 #if defined(_IRR_COMPILE_WITH_WINDOWS_DEVICE_) || defined(_IRR_COMPILE_WITH_X11_DEVICE_)
 	extGlSwapInterval(Params.Vsync ? 1 : 0);
 #endif
-
-	GL.LoadAllProcedures(ContextManager);
 
 	return true;
 }
@@ -90,9 +88,9 @@ bool COpenGLDriver::genericDriverInit()
 	if (ContextManager)
 		ContextManager->grab();
 
-	Name=L"OpenGL ";
+	Name="OpenGL ";
 	Name.append(glGetString(GL_VERSION));
-	s32 pos=Name.findNext(L' ', 7);
+	s32 pos=Name.findNext(' ', 7);
 	if (pos != -1)
 		Name=Name.subString(0, pos);
 	printVersion();
@@ -109,7 +107,7 @@ bool COpenGLDriver::genericDriverInit()
 	u32 i;
 
 	// load extensions
-	initExtensions(Params.Stencilbuffer);
+	initExtensions(ContextManager, Params.Stencilbuffer);
 
 	// reset cache handler
 	delete CacheHandler;
@@ -171,8 +169,6 @@ bool COpenGLDriver::genericDriverInit()
 
 	glClearDepth(1.0);
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-	glHint(GL_LINE_SMOOTH_HINT, GL_NICEST);
-	glHint(GL_POINT_SMOOTH_HINT, GL_FASTEST);
 	glFrontFace(GL_CW);
 	// adjust flat coloring scheme to DirectX version
 #if defined(GL_ARB_provoking_vertex) || defined(GL_EXT_provoking_vertex)
@@ -2838,46 +2834,29 @@ void COpenGLDriver::setBasicRenderStates(const SMaterial& material, const SMater
 	}
 
 	// Anti aliasing
-	if (resetAllRenderStates || lastmaterial.AntiAliasing != material.AntiAliasing)
-	{
-		if (FeatureAvailable[IRR_ARB_multisample])
-		{
-			if (material.AntiAliasing & EAAM_ALPHA_TO_COVERAGE)
-				glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE_ARB);
-			else if (lastmaterial.AntiAliasing & EAAM_ALPHA_TO_COVERAGE)
-				glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE_ARB);
+	if ((resetAllRenderStates
+			|| lastmaterial.AntiAliasing != material.AntiAliasing)
+			&& FeatureAvailable[IRR_ARB_multisample]) {
+		if (material.AntiAliasing & EAAM_ALPHA_TO_COVERAGE)
+			glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE_ARB);
+		else if (lastmaterial.AntiAliasing & EAAM_ALPHA_TO_COVERAGE)
+			glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE_ARB);
 
-			if ((AntiAlias >= 2) && (material.AntiAliasing & (EAAM_SIMPLE|EAAM_QUALITY)))
-			{
-				glEnable(GL_MULTISAMPLE_ARB);
+		if ((AntiAlias >= 2) && (material.AntiAliasing & (EAAM_SIMPLE|EAAM_QUALITY)))
+		{
+			glEnable(GL_MULTISAMPLE_ARB);
 #ifdef GL_NV_multisample_filter_hint
-				if (FeatureAvailable[IRR_NV_multisample_filter_hint])
-				{
-					if ((material.AntiAliasing & EAAM_QUALITY) == EAAM_QUALITY)
-						glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
-					else
-						glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_FASTEST);
-				}
-#endif
+			if (FeatureAvailable[IRR_NV_multisample_filter_hint])
+			{
+				if ((material.AntiAliasing & EAAM_QUALITY) == EAAM_QUALITY)
+					glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_NICEST);
+				else
+					glHint(GL_MULTISAMPLE_FILTER_HINT_NV, GL_FASTEST);
 			}
-			else
-				glDisable(GL_MULTISAMPLE_ARB);
+#endif
 		}
-		if ((material.AntiAliasing & EAAM_LINE_SMOOTH) != (lastmaterial.AntiAliasing & EAAM_LINE_SMOOTH))
-		{
-			if (material.AntiAliasing & EAAM_LINE_SMOOTH)
-				glEnable(GL_LINE_SMOOTH);
-			else if (lastmaterial.AntiAliasing & EAAM_LINE_SMOOTH)
-				glDisable(GL_LINE_SMOOTH);
-		}
-		if ((material.AntiAliasing & EAAM_POINT_SMOOTH) != (lastmaterial.AntiAliasing & EAAM_POINT_SMOOTH))
-		{
-			if (material.AntiAliasing & EAAM_POINT_SMOOTH)
-				// often in software, and thus very slow
-				glEnable(GL_POINT_SMOOTH);
-			else if (lastmaterial.AntiAliasing & EAAM_POINT_SMOOTH)
-				glDisable(GL_POINT_SMOOTH);
-		}
+		else
+			glDisable(GL_MULTISAMPLE_ARB);
 	}
 
 	// Texture parameters
@@ -3220,7 +3199,7 @@ void COpenGLDriver::setRenderStates2DMode(bool alpha, bool texture, bool alphaCh
 
 
 //! \return Returns the name of the video driver.
-const wchar_t* COpenGLDriver::getName() const
+const char* COpenGLDriver::getName() const
 {
 	return Name.c_str();
 }
@@ -3684,20 +3663,6 @@ s32 COpenGLDriver::getPixelShaderConstantID(const c8* name)
 	return -1;
 }
 
-//! Sets a vertex shader constant.
-void COpenGLDriver::setVertexShaderConstant(const f32* data, s32 startRegister, s32 constantAmount)
-{
-	for (s32 i=0; i<constantAmount; ++i)
-		extGlProgramLocalParameter4fv(GL_VERTEX_PROGRAM_ARB, startRegister+i, &data[i*4]);
-}
-
-//! Sets a pixel shader constant.
-void COpenGLDriver::setPixelShaderConstant(const f32* data, s32 startRegister, s32 constantAmount)
-{
-	for (s32 i=0; i<constantAmount; ++i)
-		extGlProgramLocalParameter4fv(GL_FRAGMENT_PROGRAM_ARB, startRegister+i, &data[i*4]);
-}
-
 //! Sets a constant for the vertex shader based on an index.
 bool COpenGLDriver::setVertexShaderConstant(s32 index, const f32* floats, int count)
 {
@@ -3735,23 +3700,6 @@ bool COpenGLDriver::setPixelShaderConstant(s32 index, const u32* ints, int count
 {
 	os::Printer::log("Error: Please call services->setPixelShaderConstant(), not VideoDriver->setPixelShaderConstant().");
 	return false;
-}
-
-
-//! Adds a new material renderer to the VideoDriver, using pixel and/or
-//! vertex shaders to render geometry.
-s32 COpenGLDriver::addShaderMaterial(const c8* vertexShaderProgram,
-	const c8* pixelShaderProgram,
-	IShaderConstantSetCallBack* callback,
-	E_MATERIAL_TYPE baseMaterial, s32 userData)
-{
-	s32 nr = -1;
-	COpenGLShaderMaterialRenderer* r = new COpenGLShaderMaterialRenderer(
-		this, nr, vertexShaderProgram, pixelShaderProgram,
-		callback, baseMaterial, userData);
-
-	r->drop();
-	return nr;
 }
 
 

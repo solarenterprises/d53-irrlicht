@@ -5,8 +5,8 @@
 #pragma once
 
 //! Identifies the IrrlichtMt fork customized for the Minetest engine
-#define IRRLICHT_VERSION_MT_REVISION 14
-#define IRRLICHT_VERSION_MT "mt14"
+#define IRRLICHT_VERSION_MT_REVISION 15
+#define IRRLICHT_VERSION_MT "mt15"
 
 //! Irrlicht SDK Version
 #define IRRLICHT_VERSION_MAJOR 1
@@ -16,8 +16,6 @@
 // it undefined
 #define IRRLICHT_VERSION_SVN alpha
 #define IRRLICHT_SDK_VERSION "1.9.0" IRRLICHT_VERSION_MT
-
-#include <stdio.h> // TODO: Although included elsewhere this is required at least for mingw
 
 #ifdef _WIN32
 #define IRRCALLCONV __stdcall

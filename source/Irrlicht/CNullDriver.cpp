@@ -41,6 +41,14 @@ IImageWriter* createImageWriterJPG();
 //! creates a writer which is able to save png images
 IImageWriter* createImageWriterPNG();
 
+namespace {
+	//! no-op material renderer
+	class CDummyMaterialRenderer : public IMaterialRenderer {
+	public:
+		CDummyMaterialRenderer() {}
+	};
+}
+
 
 //! constructor
 CNullDriver::CNullDriver(io::IFileSystem* io, const core::dimension2d<u32>& screenSize)
@@ -839,9 +847,9 @@ const SColorf& CNullDriver::getAmbientLight() const
 //! \return Returns the name of the video driver. Example: In case of the DIRECT3D8
 //! driver, it would return "Direct3D8".
 
-const wchar_t* CNullDriver::getName() const
+const char* CNullDriver::getName() const
 {
-	return L"Irrlicht NullDevice";
+	return "Irrlicht NullDevice";
 }
 
 
@@ -1525,7 +1533,7 @@ s32 CNullDriver::addMaterialRenderer(IMaterialRenderer* renderer, const char* na
 	r.Renderer = renderer;
 	r.Name = name;
 
-	if (name == 0 && (MaterialRenderers.size() < (sizeof(sBuiltInMaterialTypeNames) / sizeof(char*))-1 ))
+	if (name == 0 && MaterialRenderers.size() < numBuiltInMaterials)
 	{
 		// set name of built in renderer so that we don't have to implement name
 		// setting in all available renderers.
@@ -1542,8 +1550,7 @@ s32 CNullDriver::addMaterialRenderer(IMaterialRenderer* renderer, const char* na
 //! Sets the name of a material renderer.
 void CNullDriver::setMaterialRendererName(u32 idx, const char* name)
 {
-	if (idx < (sizeof(sBuiltInMaterialTypeNames) / sizeof(char*))-1 ||
-		idx >= MaterialRenderers.size())
+	if (idx < numBuiltInMaterials || idx >= MaterialRenderers.size())
 		return;
 
 	MaterialRenderers[idx].Name = name;
@@ -1642,8 +1649,6 @@ s32 CNullDriver::addHighLevelShaderMaterial(
 }
 
 
-//! Like IGPUProgrammingServices::addShaderMaterial() (look there for a detailed description),
-//! but tries to load the programs from files.
 s32 CNullDriver::addHighLevelShaderMaterialFromFiles(
 		const io::path& vertexShaderProgramFileName,
 		const c8* vertexShaderEntryPointName,
@@ -1714,8 +1719,6 @@ s32 CNullDriver::addHighLevelShaderMaterialFromFiles(
 }
 
 
-//! Like IGPUProgrammingServices::addShaderMaterial() (look there for a detailed description),
-//! but tries to load the programs from files.
 s32 CNullDriver::addHighLevelShaderMaterialFromFiles(
 		io::IReadFile* vertexShaderProgram,
 		const c8* vertexShaderEntryPointName,
@@ -1790,107 +1793,25 @@ s32 CNullDriver::addHighLevelShaderMaterialFromFiles(
 	return result;
 }
 
-
-//! Adds a new material renderer to the VideoDriver, using pixel and/or
-//! vertex shaders to render geometry.
-s32 CNullDriver::addShaderMaterial(const c8* vertexShaderProgram,
-	const c8* pixelShaderProgram,
-	IShaderConstantSetCallBack* callback,
-	E_MATERIAL_TYPE baseMaterial,
-	s32 userData)
+void CNullDriver::deleteShaderMaterial(s32 material)
 {
-	os::Printer::log("Shader materials not implemented yet in this driver, sorry.");
-	return -1;
-}
+	const u32 idx = (u32)material;
+	if (idx < numBuiltInMaterials || idx >= MaterialRenderers.size())
+		return;
 
-
-//! Like IGPUProgrammingServices::addShaderMaterial(), but tries to load the
-//! programs from files.
-s32 CNullDriver::addShaderMaterialFromFiles(io::IReadFile* vertexShaderProgram,
-	io::IReadFile* pixelShaderProgram,
-	IShaderConstantSetCallBack* callback,
-	E_MATERIAL_TYPE baseMaterial,
-	s32 userData)
-{
-	c8* vs = 0;
-	c8* ps = 0;
-
-	if (vertexShaderProgram)
-	{
-		const long size = vertexShaderProgram->getSize();
-		if (size)
-		{
-			vs = new c8[size+1];
-			vertexShaderProgram->read(vs, size);
-			vs[size] = 0;
-		}
+	// if this is the last material we can drop it without consequence
+	if (idx == MaterialRenderers.size() - 1) {
+		if (MaterialRenderers[idx].Renderer)
+			MaterialRenderers[idx].Renderer->drop();
+		MaterialRenderers.erase(idx);
+		return;
 	}
-
-	if (pixelShaderProgram)
-	{
-		const long size = pixelShaderProgram->getSize();
-		if (size)
-		{
-			ps = new c8[size+1];
-			pixelShaderProgram->read(ps, size);
-			ps[size] = 0;
-		}
-	}
-
-	s32 result = addShaderMaterial(vs, ps, callback, baseMaterial, userData);
-
-	delete [] vs;
-	delete [] ps;
-
-	return result;
-}
-
-
-//! Like IGPUProgrammingServices::addShaderMaterial(), but tries to load the
-//! programs from files.
-s32 CNullDriver::addShaderMaterialFromFiles(const io::path& vertexShaderProgramFileName,
-	const io::path& pixelShaderProgramFileName,
-	IShaderConstantSetCallBack* callback,
-	E_MATERIAL_TYPE baseMaterial,
-	s32 userData)
-{
-	io::IReadFile* vsfile = 0;
-	io::IReadFile* psfile = 0;
-
-	if (vertexShaderProgramFileName.size())
-	{
-		vsfile = FileSystem->createAndOpenFile(vertexShaderProgramFileName);
-		if (!vsfile)
-		{
-			os::Printer::log("Could not open vertex shader program file",
-				vertexShaderProgramFileName, ELL_WARNING);
-			return -1;
-		}
-	}
-
-	if (pixelShaderProgramFileName.size())
-	{
-		psfile = FileSystem->createAndOpenFile(pixelShaderProgramFileName);
-		if (!psfile)
-		{
-			os::Printer::log("Could not open pixel shader program file",
-				pixelShaderProgramFileName, ELL_WARNING);
-			if (vsfile)
-				vsfile->drop();
-			return -1;
-		}
-	}
-
-	s32 result = addShaderMaterialFromFiles(vsfile, psfile, callback,
-		baseMaterial, userData);
-
-	if (psfile)
-		psfile->drop();
-
-	if (vsfile)
-		vsfile->drop();
-
-	return result;
+	// otherwise replace with a dummy renderer, we have to preserve the IDs
+	auto &ref = MaterialRenderers[idx];
+	if (ref.Renderer)
+		ref.Renderer->drop();
+	ref.Renderer = new CDummyMaterialRenderer();
+	ref.Name.clear();
 }
 
 
@@ -1929,7 +1850,7 @@ IImage* CNullDriver::createScreenShot(video::ECOLOR_FORMAT format, video::E_REND
 // prints renderer version
 void CNullDriver::printVersion()
 {
-	core::stringw namePrint = L"Using renderer: ";
+	core::stringc namePrint = "Using renderer: ";
 	namePrint += getName();
 	os::Printer::log(namePrint.c_str(), ELL_INFORMATION);
 }

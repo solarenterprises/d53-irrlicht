@@ -136,7 +136,7 @@ namespace video
 					SColor color = SColor(255,255,255,255)) override;
 
 		//! Returns the name of the video driver.
-		const wchar_t* getName() const override;
+		const char* getName() const override;
 
 		//! Sets the dynamic ambient light color.
 		void setAmbientLight(const SColorf& color) override;
@@ -200,16 +200,6 @@ namespace video
 
 		//! Uint interface for the above.
 		bool setPixelShaderConstant(s32 index, const u32* ints, int count) override;
-
-		//! Sets a vertex shader constant.
-		void setVertexShaderConstant(const f32* data, s32 startRegister, s32 constantAmount=1) override;
-
-		//! Sets a pixel shader constant.
-		void setPixelShaderConstant(const f32* data, s32 startRegister, s32 constantAmount=1) override;
-
-		//! Adds a new material renderer to the VideoDriver
-		virtual s32 addShaderMaterial(const c8* vertexShaderProgram, const c8* pixelShaderProgram,
-			IShaderConstantSetCallBack* callback, E_MATERIAL_TYPE baseMaterial, s32 userData) override;
 
 		//! Adds a new material renderer to the VideoDriver
 		virtual s32 addHighLevelShaderMaterial(const c8* vertexShaderProgram, const c8* vertexShaderEntryPointName,
@@ -318,7 +308,7 @@ namespace video
 
 		COGLES1CacheHandler* CacheHandler;
 
-		core::stringw Name;
+		core::stringc Name;
 		core::matrix4 Matrices[ETS_COUNT];
 		core::array<u8> ColorBuffer;
 

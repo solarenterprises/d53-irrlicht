@@ -2,8 +2,7 @@
 // This file is part of the "Irrlicht Engine".
 // For conditions of distribution and use, see copyright notice in irrlicht.h
 
-#ifndef __T_MESH_BUFFER_H_INCLUDED__
-#define __T_MESH_BUFFER_H_INCLUDED__
+#pragma once
 
 #include "irrArray.h"
 #include "IMeshBuffer.h"
@@ -206,37 +205,6 @@ namespace scene
 		}
 
 
-		//! Append the meshbuffer to the current buffer
-		/** Only works for compatible types, i.e. either the same type
-		or the main buffer is of standard type. Otherwise, behavior is
-		undefined.
-		\param other Meshbuffer to be appended to this one.
-		*/
-		void append(const IMeshBuffer* const other) override
-		{
-			/*
-			if (this==other)
-				return;
-
-			const u32 vertexCount = getVertexCount();
-			u32 i;
-
-			Vertices.reallocate(vertexCount+other->getVertexCount());
-			for (i=0; i<other->getVertexCount(); ++i)
-			{
-				Vertices.push_back(reinterpret_cast<const T*>(other->getVertices())[i]);
-			}
-
-			Indices.reallocate(getIndexCount()+other->getIndexCount());
-			for (i=0; i<other->getIndexCount(); ++i)
-			{
-				Indices.push_back(other->getIndices()[i]+vertexCount);
-			}
-			BoundingBox.addInternalBox(other->getBoundingBox());
-			*/
-		}
-
-
 		//! get the current hardware mapping hint
 		E_HARDWARE_MAPPING getHardwareMappingHint_Vertex() const override
 		{
@@ -324,7 +292,3 @@ namespace scene
 	typedef CMeshBuffer<video::S3DVertexTangents> SMeshBufferTangents;
 } // end namespace scene
 } // end namespace irr
-
-#endif
-
-

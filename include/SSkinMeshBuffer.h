@@ -2,8 +2,7 @@
 // This file is part of the "Irrlicht Engine".
 // For conditions of distribution and use, see copyright notice in irrlicht.h
 
-#ifndef __I_SKIN_MESH_BUFFER_H_INCLUDED__
-#define __I_SKIN_MESH_BUFFER_H_INCLUDED__
+#pragma once
 
 #include "IMeshBuffer.h"
 #include "S3DVertex.h"
@@ -330,9 +329,6 @@ struct SSkinMeshBuffer : public IMeshBuffer
 	//! append the vertices and indices to the current buffer
 	void append(const void* const vertices, u32 numVertices, const u16* const indices, u32 numIndices) override {}
 
-	//! append the meshbuffer to the current buffer
-	void append(const IMeshBuffer* const other) override {}
-
 	//! get the current hardware mapping hint for vertex buffers
 	E_HARDWARE_MAPPING getHardwareMappingHint_Vertex() const override
 	{
@@ -427,6 +423,3 @@ struct SSkinMeshBuffer : public IMeshBuffer
 
 } // end namespace scene
 } // end namespace irr
-
-#endif
-

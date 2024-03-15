@@ -125,8 +125,6 @@ bool COGLES1Driver::genericDriverInit(const core::dimension2d<u32>& screenSize, 
 
 	glHint(GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 	glHint(GL_GENERATE_MIPMAP_HINT, GL_FASTEST);
-	glHint(GL_LINE_SMOOTH_HINT, GL_FASTEST);
-	glHint(GL_POINT_SMOOTH_HINT, GL_FASTEST);
 	glDepthFunc(GL_LEQUAL);
 	glFrontFace(GL_CW);
 	glAlphaFunc(GL_GREATER, 0.f);
@@ -1798,33 +1796,15 @@ void COGLES1Driver::setBasicRenderStates(const SMaterial& material, const SMater
 	// Anti aliasing
 	if (resetAllRenderStates || lastmaterial.AntiAliasing != material.AntiAliasing)
 	{
-//		if (FeatureAvailable[IRR_ARB_multisample])
-		{
-			if (material.AntiAliasing & EAAM_ALPHA_TO_COVERAGE)
-				glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
-			else if (lastmaterial.AntiAliasing & EAAM_ALPHA_TO_COVERAGE)
-				glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+		if (material.AntiAliasing & EAAM_ALPHA_TO_COVERAGE)
+			glEnable(GL_SAMPLE_ALPHA_TO_COVERAGE);
+		else if (lastmaterial.AntiAliasing & EAAM_ALPHA_TO_COVERAGE)
+			glDisable(GL_SAMPLE_ALPHA_TO_COVERAGE);
 
-			if ((AntiAlias >= 2) && (material.AntiAliasing & (EAAM_SIMPLE|EAAM_QUALITY)))
-				glEnable(GL_MULTISAMPLE);
-			else
-				glDisable(GL_MULTISAMPLE);
-		}
-		if ((material.AntiAliasing & EAAM_LINE_SMOOTH) != (lastmaterial.AntiAliasing & EAAM_LINE_SMOOTH))
-		{
-			if (material.AntiAliasing & EAAM_LINE_SMOOTH)
-				glEnable(GL_LINE_SMOOTH);
-			else if (lastmaterial.AntiAliasing & EAAM_LINE_SMOOTH)
-				glDisable(GL_LINE_SMOOTH);
-		}
-		if ((material.AntiAliasing & EAAM_POINT_SMOOTH) != (lastmaterial.AntiAliasing & EAAM_POINT_SMOOTH))
-		{
-			if (material.AntiAliasing & EAAM_POINT_SMOOTH)
-				// often in software, and thus very slow
-				glEnable(GL_POINT_SMOOTH);
-			else if (lastmaterial.AntiAliasing & EAAM_POINT_SMOOTH)
-				glDisable(GL_POINT_SMOOTH);
-		}
+		if ((AntiAlias >= 2) && (material.AntiAliasing & (EAAM_SIMPLE|EAAM_QUALITY)))
+			glEnable(GL_MULTISAMPLE);
+		else
+			glDisable(GL_MULTISAMPLE);
 	}
 
 	// Texture parameters
@@ -1872,33 +1852,7 @@ void COGLES1Driver::setTextureRenderStates(const SMaterial& material, bool reset
 		if (resetAllRenderstates)
 			statesCache.IsCached = false;
 
-#ifdef GL_VERSION_2_1
-		if (Version >= 210)
-		{
-			if (!statesCache.IsCached || material.TextureLayers[i].LODBias != statesCache.LODBias)
-			{
-				if (material.TextureLayers[i].LODBias)
-				{
-					const float tmp = core::clamp(material.TextureLayers[i].LODBias * 0.125f, -MaxTextureLODBias, MaxTextureLODBias);
-					glTexParameterf(tmpTextureType, GL_TEXTURE_LOD_BIAS, tmp);
-				}
-				else
-					glTexParameterf(tmpTextureType, GL_TEXTURE_LOD_BIAS, 0.f);
-
-				statesCache.LODBias = material.TextureLayers[i].LODBias;
-			}
-		}
-		else if (FeatureAvailable[IRR_EXT_texture_lod_bias])
-		{
-			if (material.TextureLayers[i].LODBias)
-			{
-				const float tmp = core::clamp(material.TextureLayers[i].LODBias * 0.125f, -MaxTextureLODBias, MaxTextureLODBias);
-				glTexEnvf(GL_TEXTURE_FILTER_CONTROL_EXT, GL_TEXTURE_LOD_BIAS_EXT, tmp);
-			}
-			else
-				glTexEnvf(GL_TEXTURE_FILTER_CONTROL_EXT, GL_TEXTURE_LOD_BIAS_EXT, 0.f);
-		}
-#elif defined(GL_EXT_texture_lod_bias)
+#if defined(GL_EXT_texture_lod_bias)
 		if (FeatureAvailable[COGLESCoreExtensionHandler::IRR_GL_EXT_texture_lod_bias])
 		{
 			if (material.TextureLayers[i].LODBias)
@@ -2087,7 +2041,7 @@ void COGLES1Driver::setRenderStates2DMode(bool alpha, bool texture, bool alphaCh
 
 
 //! \return Returns the name of the video driver.
-const wchar_t* COGLES1Driver::getName() const
+const char* COGLES1Driver::getName() const
 {
 	return Name.c_str();
 }
@@ -2418,36 +2372,6 @@ bool COGLES1Driver::setPixelShaderConstant(s32 index, const u32* ints, int count
 {
 	os::Printer::log("Error: Please use IMaterialRendererServices from IShaderConstantSetCallBack::OnSetConstants not VideoDriver->setPixelShaderConstant().");
 	return false;
-}
-
-//! Sets a vertex shader constant.
-void COGLES1Driver::setVertexShaderConstant(const f32* data, s32 startRegister, s32 constantAmount)
-{
-#ifdef GL_vertex_program
-	for (s32 i=0; i<constantAmount; ++i)
-		extGlProgramLocalParameter4fv(GL_VERTEX_PROGRAM, startRegister+i, &data[i*4]);
-#endif
-}
-
-//! Sets a pixel shader constant.
-void COGLES1Driver::setPixelShaderConstant(const f32* data, s32 startRegister, s32 constantAmount)
-{
-#ifdef GL_fragment_program
-	for (s32 i=0; i<constantAmount; ++i)
-		extGlProgramLocalParameter4fv(GL_FRAGMENT_PROGRAM, startRegister+i, &data[i*4]);
-#endif
-}
-
-
-//! Adds a new material renderer to the VideoDriver, using pixel and/or
-//! vertex shaders to render geometry.
-s32 COGLES1Driver::addShaderMaterial(const c8* vertexShaderProgram,
-	const c8* pixelShaderProgram,
-	IShaderConstantSetCallBack* callback,
-	E_MATERIAL_TYPE baseMaterial, s32 userData)
-{
-	os::Printer::log("No shader support.");
-	return -1;
 }
 
 

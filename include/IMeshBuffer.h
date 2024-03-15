@@ -2,8 +2,7 @@
 // This file is part of the "Irrlicht Engine".
 // For conditions of distribution and use, see copyright notice in irrlicht.h
 
-#ifndef __I_MESH_BUFFER_H_INCLUDED__
-#define __I_MESH_BUFFER_H_INCLUDED__
+#pragma once
 
 #include "IReferenceCounted.h"
 #include "SMaterial.h"
@@ -120,11 +119,6 @@ namespace scene
 		\param numIndices Number of indices in array. */
 		virtual void append(const void* const vertices, u32 numVertices, const u16* const indices, u32 numIndices) = 0;
 
-		//! Append the meshbuffer to the current buffer
-		/** Only works for compatible vertex types
-		\param other Buffer to append to this one. */
-		virtual void append(const IMeshBuffer* const other) = 0;
-
 		//! get the current hardware mapping hint
 		virtual E_HARDWARE_MAPPING getHardwareMappingHint_Vertex() const = 0;
 
@@ -181,5 +175,3 @@ namespace scene
 
 } // end namespace scene
 } // end namespace irr
-
-#endif

@@ -136,7 +136,7 @@ namespace video
 //			virtual void drawPixel(u32 x, u32 y, const SColor & color);
 
 		//! Returns the name of the video driver.
-		const wchar_t* getName() const override;
+		const char* getName() const override;
 
 		//! Returns the maximum texture size supported.
 		core::dimension2du getMaxTextureSize() const override;
@@ -168,12 +168,6 @@ namespace video
 		//! Get a pixel shader constant index.
 		s32 getPixelShaderConstantID(const c8* name) override;
 
-		//! Sets a vertex shader constant.
-		void setVertexShaderConstant(const f32* data, s32 startRegister, s32 constantAmount = 1) override;
-
-		//! Sets a pixel shader constant.
-		void setPixelShaderConstant(const f32* data, s32 startRegister, s32 constantAmount = 1) override;
-
 		//! Sets a constant for the vertex shader based on an index.
 		bool setVertexShaderConstant(s32 index, const f32* floats, int count) override;
 
@@ -191,10 +185,6 @@ namespace video
 
 		//! Uint interface for the above.
 		bool setPixelShaderConstant(s32 index, const u32* ints, int count) override;
-
-		//! Adds a new material renderer to the VideoDriver
-		virtual s32 addShaderMaterial(const c8* vertexShaderProgram, const c8* pixelShaderProgram,
-				IShaderConstantSetCallBack* callback, E_MATERIAL_TYPE baseMaterial, s32 userData) override;
 
 		//! Adds a new material renderer to the VideoDriver
 		virtual s32 addHighLevelShaderMaterial(
@@ -282,7 +272,6 @@ namespace video
 		COpenGL3CacheHandler* getCacheHandler() const;
 
 	protected:
-		//! inits the opengl-es driver
 		virtual bool genericDriverInit(const core::dimension2d<u32>& screenSize, bool stencilBuffer);
 
 		void initVersion();
@@ -345,7 +334,7 @@ namespace video
 		void endDraw(const VertexType &vertexType);
 
 		COpenGL3CacheHandler* CacheHandler;
-		core::stringw Name;
+		core::stringc Name;
 		core::stringc VendorName;
 		SIrrlichtCreationParameters Params;
 		OpenGLVersion Version;
@@ -400,6 +389,8 @@ private:
 		ECOLOR_FORMAT ColorFormat;
 
 		IContextManager* ContextManager;
+
+		void printTextureFormats();
 
 		void addDummyMaterial(E_MATERIAL_TYPE type);
 

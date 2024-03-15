@@ -213,7 +213,7 @@ namespace video
 
 		//! \return Returns the name of the video driver. Example: In case of the Direct3D8
 		//! driver, it would return "Direct3D8.1".
-		const wchar_t* getName() const override;
+		const char* getName() const override;
 
 		//! Sets the dynamic ambient light color. The default color is
 		//! (0,0,0,0) which means it is dark.
@@ -267,12 +267,6 @@ namespace video
 		//! Get a pixel shader constant index.
 		s32 getPixelShaderConstantID(const c8* name) override;
 
-		//! Sets a vertex shader constant.
-		void setVertexShaderConstant(const f32* data, s32 startRegister, s32 constantAmount=1) override;
-
-		//! Sets a pixel shader constant.
-		void setPixelShaderConstant(const f32* data, s32 startRegister, s32 constantAmount=1) override;
-
 		//! Sets a constant for the vertex shader based on an index.
 		bool setVertexShaderConstant(s32 index, const f32* floats, int count) override;
 
@@ -294,12 +288,6 @@ namespace video
 		//! disables all textures beginning with the optional fromStage parameter. Otherwise all texture stages are disabled.
 		//! Returns whether disabling was successful or not.
 		bool disableTextures(u32 fromStage=0);
-
-		//! Adds a new material renderer to the VideoDriver, using
-		//! extGLGetObjectParameteriv(shaderHandle, GL_OBJECT_COMPILE_STATUS_ARB, &status)
-		//! pixel and/or vertex shaders to render geometry.
-		virtual s32 addShaderMaterial(const c8* vertexShaderProgram, const c8* pixelShaderProgram,
-			IShaderConstantSetCallBack* callback, E_MATERIAL_TYPE baseMaterial, s32 userData) override;
 
 		//! Adds a new material renderer to the VideoDriver, using GLSL to render geometry.
 		virtual s32 addHighLevelShaderMaterial(
@@ -447,7 +435,7 @@ namespace video
 
 		COpenGLCacheHandler* CacheHandler;
 
-		core::stringw Name;
+		core::stringc Name;
 		core::matrix4 Matrices[ETS_COUNT];
 		core::array<u8> ColorBuffer;
 
