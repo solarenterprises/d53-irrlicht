@@ -127,7 +127,6 @@ namespace video
 	class IVideoDriver : public virtual IReferenceCounted
 	{
 	public:
-
 		//! Applications must call this method before performing any rendering.
 		/** This method can clear the back- and the z-buffer.
 		\param clearFlag A combination of the E_CLEAR_BUFFER_FLAG bit-flags.
