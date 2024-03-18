@@ -19,7 +19,7 @@ jobs:
 
       - name: Build
         run: |
-          cmake . -DUSE_SDL2=OFF
+          cmake . -DBUILD_SHARED_LIBS=OFF -DUSE_SDL2=OFF
           make VERBOSE=1 -j2
 
       - name: Test
