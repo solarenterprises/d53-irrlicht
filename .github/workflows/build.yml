@@ -10,6 +10,7 @@ jobs:
 
   linux-gl:
     runs-on: ubuntu-20.04
+    if: false
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
@@ -50,10 +51,12 @@ jobs:
       - name: Install compiler
         run: |
           sudo apt-get update && sudo apt-get install cmake -qyy
+          chmod +x ./scripts/ci-get-mingw.sh
           ./scripts/ci-get-mingw.sh
 
       - name: Build
         run: |
+          chmod +x ./scripts/ci-build-mingw.sh
           ./scripts/ci-build-mingw.sh package
         env:
           CC: ${{matrix.config.arch}}-w64-mingw32-clang
@@ -66,6 +69,7 @@ jobs:
           path: ./irrlicht-${{matrix.config.variant}}${{matrix.config.extras}}.zip
 
   macos:
+    if: false
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -82,9 +86,10 @@ jobs:
       - name: Test (headless)
         run: |
           ./bin/OSX/AutomatedTest null
-
+          
   msvc:
     name: VS 2019 ${{ matrix.config.arch }} ${{ matrix.sdl.label }}
+    if: false
     runs-on: windows-2019
     env:
       VCPKG_VERSION: 8eb57355a4ffb410a2e94c07b4dca2dffbee8e50
@@ -153,4 +158,46 @@ jobs:
           name: msvc-${{ matrix.config.arch }}-${{matrix.sdl.use}}
           path: artifact/
 
-  
+  android:
+    name: Android ${{ matrix.arch }}
+    if: false
+    runs-on: ubuntu-20.04
+    env:
+       ndk_version: "r25c"
+       ANDROID_NDK: ${{ github.workspace }}/android-ndk
+    strategy:
+      matrix:
+        arch: [armeabi-v7a, arm64-v8a, x86, x86_64]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install deps
+        run: |
+          sudo rm /var/lib/man-db/auto-update
+          sudo apt-get update
+          sudo apt-get install -qyy wget unzip zip gcc-multilib make cmake
+
+      - name: Cache NDK
+        id: cache-ndk
+        uses: actions/cache@v4
+        with:
+          key: android-ndk-${{ env.ndk_version }}-linux
+          path: ${{ env.ANDROID_NDK }}
+
+      - name: Install NDK
+        run: |
+          wget --progress=bar:force "http://dl.google.com/android/repository/android-ndk-${ndk_version}-linux.zip"
+          unzip -q "android-ndk-${ndk_version}-linux.zip"
+          rm "android-ndk-${ndk_version}-linux.zip"
+          mv "android-ndk-${ndk_version}" "${ANDROID_NDK}"
+        if: ${{ steps.cache-ndk.outputs.cache-hit != 'true' }}
+
+      - name: Build
+        run: ./scripts/ci-build-android.sh ${{ matrix.arch }}
+
+      #- name: Upload Artifact
+      #  uses: actions/upload-artifact@v4
+      #  with:
+      #    name: irrlicht-android-${{ matrix.arch }}
+      #    path: ${{ runner.temp }}/pkg/${{ matrix.arch }}

@@ -61,12 +61,11 @@ make -j$(nproc)
 if [ "$1" = "package" ]; then
 	make DESTDIR=$PWD/_install install
 	# strip library
-	# "${CXX%-*}-strip" --strip-unneeded _install/usr/local/lib/*.a
+	#"${CXX%-*}-strip" --strip-unneeded _install/usr/local/lib/*.dll
 	# bundle the DLLs that are specific to Irrlicht (kind of a hack)
-	shopt -s nullglob
-	cp -p $libs/*/bin/IrrlichtMt.a _install/usr/local/lib/IrrlichtMt.a
-	cp -p $libs/*/bin/{libjpeg,libpng,SDL}*.dll _install/usr/local/lib/
+	# shopt -s nullglob
+	cp -p $libs/{libjpeg,libpng}/lib/* _install/
 	# create a ZIP
-	(cd _install/usr/local; zip -9r "$OLDPWD/irrlicht-$variant$extras.zip" -- *)
+	(cd _install/; zip -9r "$OLDPWD/irrlicht-$variant$extras.zip" -- *)
 fi
 exit 0
