@@ -76,7 +76,7 @@ jobs:
 
       - name: Build
         run: |
-          cmake . -DCMAKE_FIND_FRAMEWORK=LAST -DBUILD_EXAMPLES=0
+          cmake . -DCMAKE_FIND_FRAMEWORK=LAST -DBUILD_EXAMPLES=0 -DBUILD_SHARED_LIBS=false -DCMAKE_CXX_FLAGS_RELEASE="/MT /O2 /Ob2 /DNDEBUG" 
           make -j3
 
       - name: Test (headless)
