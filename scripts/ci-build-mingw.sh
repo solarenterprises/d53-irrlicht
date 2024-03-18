@@ -64,7 +64,7 @@ if [ "$1" = "package" ]; then
 	# "${CXX%-*}-strip" --strip-unneeded _install/usr/local/lib/*.a
 	# bundle the DLLs that are specific to Irrlicht (kind of a hack)
 	shopt -s nullglob
-	cp -p $libs/*/bin/{libjpeg,libpng,SDL}*.a _install/usr/local/lib/
+	cp -p $libs/*/bin/IrrlichtMt.a _install/usr/local/lib/IrrlichtMt.a
 	cp -p $libs/*/bin/{libjpeg,libpng,SDL}*.dll _install/usr/local/lib/
 	# create a ZIP
 	(cd _install/usr/local; zip -9r "$OLDPWD/irrlicht-$variant$extras.zip" -- *)
