@@ -10,7 +10,6 @@ jobs:
 
   linux-gl:
     runs-on: ubuntu-20.04
-    if: false
     steps:
       - uses: actions/checkout@v4
       - name: Install deps
@@ -89,7 +88,6 @@ jobs:
           
   msvc:
     name: VS 2019 ${{ matrix.config.arch }} ${{ matrix.sdl.label }}
-    if: false
     runs-on: windows-2019
     env:
       VCPKG_VERSION: 8eb57355a4ffb410a2e94c07b4dca2dffbee8e50
@@ -160,7 +158,6 @@ jobs:
 
   android:
     name: Android ${{ matrix.arch }}
-    if: false
     runs-on: ubuntu-20.04
     env:
        ndk_version: "r25c"
