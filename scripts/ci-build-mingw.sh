@@ -42,7 +42,8 @@ tmp=(
 	-DJPEG_LIBRARY=$libs/libjpeg/lib/libjpeg.dll.a \
 	-DJPEG_INCLUDE_DIR=$libs/libjpeg/include \
 	-DZLIB_LIBRARY=$libs/zlib/lib/libz.dll.a \
-	-DZLIB_INCLUDE_DIR=$libs/zlib/include
+	-DZLIB_INCLUDE_DIR=$libs/zlib/include \
+	-DBUILD_SHARED_LIBS=OFF
 )
 if [ $with_sdl -eq 1 ]; then
 	tmp+=(
