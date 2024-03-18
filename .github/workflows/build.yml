@@ -141,6 +141,9 @@ jobs:
       - name: Move dlls into artifact folder
         run: move bin\Win32-VisualStudio\Release\* artifact\lib\
 
+      - name: Move libs into artifact folder
+        run: move lib\Win32-VisualStudio\Release\* artifact\lib\
+
       - name: Move includes into artifact folder
         run: move include artifact/
 
