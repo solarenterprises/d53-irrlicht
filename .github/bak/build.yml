@@ -36,6 +36,101 @@ jobs:
           name: irrlicht-linux
           path: ./irrlicht-linux.tar.gz
 
+  linux-gles:
+    # Xvfb test is broken on 20.04 for unknown reasons (not our bug)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install g++ cmake libxi-dev libgles2-mesa-dev libpng-dev libjpeg-dev zlib1g-dev xvfb -qyy
+
+      - name: Build
+        run: |
+          cmake . -DBUILD_EXAMPLES=1 -DUSE_SDL2=OFF -DENABLE_OPENGL=OFF -DENABLE_GLES2=ON
+          make -j2
+
+      - name: Test (headless)
+        run: |
+          cd bin/Linux
+          ./AutomatedTest null
+
+      - name: Test (Xvfb)
+        run: |
+          cd bin/Linux
+          LIBGL_ALWAYS_SOFTWARE=true xvfb-run ./AutomatedTest ogles2
+
+  linux-sdl:
+    # something is wrong with the SDL cmake files on 20.04
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install g++ cmake libsdl2-dev libpng-dev libjpeg-dev zlib1g-dev -qyy
+
+      - name: Build
+        run: |
+          cmake . -DBUILD_EXAMPLES=1 -DUSE_SDL2=ON -DCMAKE_BUILD_TYPE=Debug
+          make -j2
+
+      - name: Test (headless)
+        run: |
+          cd bin/Linux
+          ./AutomatedTest null
+
+  linux-sdl-gl3:
+    # Xvfb test is broken on 20.04 for unknown reasons (not our bug)
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install g++ cmake libsdl2-dev libpng-dev libjpeg-dev zlib1g-dev xvfb -qyy
+
+      - name: Build
+        run: |
+          cmake . -DBUILD_EXAMPLES=1 -DUSE_SDL2=ON -DENABLE_OPENGL=OFF -DENABLE_OPENGL3=ON
+          make -j2
+
+      - name: Test (headless)
+        run: |
+          cd bin/Linux
+          ./AutomatedTest null
+
+      - name: Test (Xvfb)
+        run: |
+          cd bin/Linux
+          LIBGL_ALWAYS_SOFTWARE=true xvfb-run ./AutomatedTest opengl3
+
+  linux-sdl-gles2:
+    # something is wrong with the SDL cmake files on 20.04
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install g++ cmake libsdl2-dev libpng-dev libjpeg-dev zlib1g-dev xvfb -qyy
+
+      - name: Build
+        run: |
+          cmake . -DBUILD_EXAMPLES=1 -DUSE_SDL2=ON -DENABLE_OPENGL=OFF -DENABLE_GLES2=ON
+          make -j2
+
+      - name: Test (headless)
+        run: |
+          cd bin/Linux
+          ./AutomatedTest null
+
+      - name: Test (Xvfb)
+        run: |
+          cd bin/Linux
+          LIBGL_ALWAYS_SOFTWARE=true xvfb-run ./AutomatedTest ogles2
+
   mingw:
     name: "MinGW ${{matrix.config.variant}}${{matrix.config.extras}}"
     runs-on: ubuntu-22.04
@@ -45,6 +140,8 @@ jobs:
         config:
           - {variant: win32, arch: i686}
           - {variant: win64, arch: x86_64}
+          - {variant: win32, arch: i686, extras: "-sdl"}
+          - {variant: win64, arch: x86_64, extras: "-sdl"}
     steps:
       - uses: actions/checkout@v4
       - name: Install compiler
@@ -76,12 +173,26 @@ jobs:
 
       - name: Build
         run: |
-          cmake . -DCMAKE_FIND_FRAMEWORK=LAST -DBUILD_EXAMPLES=0
+          cmake . -DCMAKE_FIND_FRAMEWORK=LAST -DBUILD_EXAMPLES=1
           make -j3
 
       - name: Test (headless)
         run: |
           ./bin/OSX/AutomatedTest null
+
+  macos-sdl:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install deps
+        run: |
+          brew update
+          brew install cmake libpng jpeg sdl2
+
+      - name: Build
+        run: |
+          cmake . -DCMAKE_FIND_FRAMEWORK=LAST -DBUILD_EXAMPLES=1 -DUSE_SDL2=1
+          make -j3
 
   msvc:
     name: VS 2019 ${{ matrix.config.arch }} ${{ matrix.sdl.label }}
@@ -107,6 +218,10 @@ jobs:
             use: FALSE
             label: '(no SDL)'
             vcpkg_packages: opengl-registry
+          -
+            use: TRUE
+            label: '(with SDL)'
+            vcpkg_packages: sdl2
 
     steps:
       - name: Checkout
@@ -124,8 +239,6 @@ jobs:
       - name: CMake
         run: |
             cmake ${{matrix.config.generator}}  `
-            -DCMAKE_CXX_FLAGS_RELEASE="/MT /O2 /Ob2 /DNDEBUG"  `
-            -DBUILD_SHARED_LIBS=false  `
             -DUSE_SDL2=${{matrix.sdl.use}}  `
             -DCMAKE_TOOLCHAIN_FILE="${{ github.workspace }}\vcpkg\scripts\buildsystems\vcpkg.cmake"  `
             -DCMAKE_BUILD_TYPE=Release .
