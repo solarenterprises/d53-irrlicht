@@ -56,6 +56,10 @@ install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
 	DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/irrlichtmt"
 	FILES_MATCHING PATTERN "*.h"
 )
+install(DIRECTORY "${PROJECT_SOURCE_DIR}/source/Irrlicht/"
+	DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/irrlichtmt"
+	FILES_MATCHING PATTERN "*.h"
+)
 
 # Installation of CMake target and configuration files.
 install(EXPORT IrrlichtMt-export

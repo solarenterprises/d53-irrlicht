@@ -72,7 +72,6 @@ jobs:
           path: ./irrlicht-${{matrix.config.variant}}${{matrix.config.extras}}.zip
 
   macos:
-    if: false
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -85,7 +84,7 @@ jobs:
 
       - name: Build
         run: |
-          cmake . -DCMAKE_FIND_FRAMEWORK=LAST -DBUILD_EXAMPLES=0 -DBUILD_SHARED_LIBS=false -DCMAKE_CXX_FLAGS_RELEASE="/MT /O2 /Ob2 /DNDEBUG" 
+          cmake . -DCMAKE_FIND_FRAMEWORK=LAST -DBUILD_EXAMPLES=0 -DBUILD_SHARED_LIBS=false
           make -j3
 
       - name: Test (headless)
