@@ -54,6 +54,7 @@ export(EXPORT IrrlichtMt-export
 # Installation of headers.
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/"
 	DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/irrlichtmt"
+	FILES_MATCHING PATTERN "*.h"
 )
 
 # Installation of CMake target and configuration files.

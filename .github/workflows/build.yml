@@ -181,7 +181,7 @@ jobs:
 
       - name: Install deps
         run: |
-          sudo rm /var/lib/man-db/auto-update
+          sudo rm /var/lib/man-db/auto-update || true
           sudo apt-get update
           sudo apt-get install -qyy wget unzip zip gcc-multilib make cmake
 
@@ -201,10 +201,12 @@ jobs:
         if: ${{ steps.cache-ndk.outputs.cache-hit != 'true' }}
 
       - name: Build
-        run: ./scripts/ci-build-android.sh ${{ matrix.arch }}
+        run: |
+            chmod +x ./scripts/ci-build-android.sh
+            ./scripts/ci-build-android.sh ${{ matrix.arch }}
 
-      #- name: Upload Artifact
-      #  uses: actions/upload-artifact@v4
-      #  with:
-      #    name: irrlicht-android-${{ matrix.arch }}
-      #    path: ${{ runner.temp }}/pkg/${{ matrix.arch }}
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+         name: irrlicht-android-${{ matrix.arch }}
+         path: ${{ runner.temp }}/pkg/${{ matrix.arch }}
