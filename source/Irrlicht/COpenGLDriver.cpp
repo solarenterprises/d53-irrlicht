@@ -494,7 +494,7 @@ bool COpenGLDriver::resizeIndexHardwareBufferSubData(SHWBufferLink* _HWBuffer, u
 
 	//
 	// Copy data from old buffer to new buffer
-	GLsizeiptrARB copySize = min(size, HWBuffer->vbo_indicesSize);
+	GLsizeiptrARB copySize = std::min((GLuint)size, HWBuffer->vbo_indicesSize);
 
 	extGlBindBuffer(GL_COPY_READ_BUFFER, prev_vbo_indicesID);
 	extGlBindBuffer(GL_COPY_WRITE_BUFFER, HWBuffer->vbo_indicesID);
@@ -549,7 +549,7 @@ bool COpenGLDriver::resizeVertexHardwareBufferSubData(SHWBufferLink* _HWBuffer, 
 
 	//
 	// Copy data from old buffer to new buffer
-	GLsizeiptrARB copySize = min(size, HWBuffer->vbo_verticesSize);
+	GLsizeiptrARB copySize = std::min((GLuint)size, HWBuffer->vbo_verticesSize);
 
 	extGlBindBuffer(GL_COPY_READ_BUFFER, prev_vbo_vertexID);
 	extGlBindBuffer(GL_COPY_WRITE_BUFFER, HWBuffer->vbo_verticesID);
