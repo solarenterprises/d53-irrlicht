@@ -1166,6 +1166,7 @@ class COpenGLExtensionHandler
 	void extGlDeleteBuffers(GLsizei n, const GLuint *buffers);
 	void extGlBufferSubData (GLenum target, GLintptrARB offset, GLsizeiptrARB size, const GLvoid *data);
 	void extGlGetBufferSubData (GLenum target, GLintptrARB offset, GLsizeiptrARB size, GLvoid *data);
+	void extGlCopyBufferSubData(GLenum readTarget, GLenum writeTarget, GLsizeiptrARB readOffset, GLsizeiptrARB writeOffset, GLsizeiptrARB size);
 	void *extGlMapBuffer (GLenum target, GLenum access);
 	GLboolean extGlUnmapBuffer (GLenum target);
 	GLboolean extGlIsBuffer (GLuint buffer);
@@ -1323,6 +1324,7 @@ class COpenGLExtensionHandler
 		PFNGLBUFFERDATAARBPROC pGlBufferDataARB;
 		PFNGLDELETEBUFFERSARBPROC pGlDeleteBuffersARB;
 		PFNGLBUFFERSUBDATAARBPROC pGlBufferSubDataARB;
+		PFNGLCOPYBUFFERSUBDATAPROC pGlCopyBufferSubData;
 		PFNGLGETBUFFERSUBDATAARBPROC pGlGetBufferSubDataARB;
 		PFNGLMAPBUFFERARBPROC pGlMapBufferARB;
 		PFNGLUNMAPBUFFERARBPROC pGlUnmapBufferARB;
@@ -1988,6 +1990,12 @@ inline void COpenGLExtensionHandler::extGlBufferSubData(GLenum target, GLintptrA
 {
 	if (pGlBufferSubDataARB)
 		pGlBufferSubDataARB(target, offset, size, data);
+}
+
+inline void COpenGLExtensionHandler::extGlCopyBufferSubData(GLenum readTarget, GLenum writeTarget, GLsizeiptrARB readOffset, GLsizeiptrARB writeOffset, GLsizeiptrARB size)
+{
+	if (pGlCopyBufferSubData)
+		pGlCopyBufferSubData(readTarget, writeTarget, readOffset, writeOffset, size);
 }
 
 inline void COpenGLExtensionHandler::extGlGetBufferSubData(GLenum target, GLintptrARB offset, GLsizeiptrARB size, GLvoid *data)

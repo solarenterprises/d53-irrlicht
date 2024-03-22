@@ -67,7 +67,7 @@ COpenGLExtensionHandler::COpenGLExtensionHandler() :
 	// MRTs
 	pGlDrawBuffersARB(0), pGlDrawBuffersATI(0),
 	pGlGenBuffersARB(0), pGlBindBufferARB(0), pGlBufferDataARB(0), pGlDeleteBuffersARB(0),
-	pGlBufferSubDataARB(0), pGlGetBufferSubDataARB(0), pGlMapBufferARB(0), pGlUnmapBufferARB(0),
+	pGlBufferSubDataARB(0), pGlCopyBufferSubData(0), pGlGetBufferSubDataARB(0), pGlMapBufferARB(0), pGlUnmapBufferARB(0),
 	pGlIsBufferARB(0), pGlGetBufferParameterivARB(0), pGlGetBufferPointervARB(0),
 	pGlProvokingVertexARB(0), pGlProvokingVertexEXT(0),
 	pGlProgramParameteriARB(0), pGlProgramParameteriEXT(0),
@@ -244,6 +244,7 @@ void COpenGLExtensionHandler::initExtensions(video::IContextManager *cmgr, bool 
 	pGlUniformMatrix4fvARB = (PFNGLUNIFORMMATRIX4FVARBPROC) IRR_OGL_LOAD_EXTENSION("glUniformMatrix4fvARB");
 	pGlGetActiveUniformARB = (PFNGLGETACTIVEUNIFORMARBPROC) IRR_OGL_LOAD_EXTENSION("glGetActiveUniformARB");
 	pGlGetActiveUniform = (PFNGLGETACTIVEUNIFORMPROC) IRR_OGL_LOAD_EXTENSION("glGetActiveUniform");
+	pGlCopyBufferSubData = (PFNGLCOPYBUFFERSUBDATAPROC)IRR_OGL_LOAD_EXTENSION("glCopyBufferSubData");
 
 	// get point parameter extension
 	pGlPointParameterfARB = (PFNGLPOINTPARAMETERFARBPROC) IRR_OGL_LOAD_EXTENSION("glPointParameterfARB");
