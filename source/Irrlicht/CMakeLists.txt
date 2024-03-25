@@ -1,5 +1,5 @@
 if(NOT ANDROID AND NOT APPLE)
-	set(DEFAULT_SDL2 ON)
+	set(DEFAULT_SDL2 FALSE)
 endif()
 
 option(BUILD_SHARED_LIBS "Build shared library" TRUE)

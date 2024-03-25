@@ -440,7 +440,7 @@ bool COpenGLDriver::getIndexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 i
 	return (!testGLError(__LINE__));
 }
 
-bool COpenGLDriver::resizeIndexHardwareBufferSubData(SHWBufferLink* _HWBuffer, u32 indexCount) {
+bool COpenGLDriver::resizeIndexHardwareBufferSubData(SHWBufferLink* _HWBuffer, u32 indexCount, u32 cpyIndexCount) {
 	SHWBufferLink_opengl* HWBuffer = (SHWBufferLink_opengl*)_HWBuffer;
 	if (!HWBuffer)
 		return false;
@@ -494,7 +494,9 @@ bool COpenGLDriver::resizeIndexHardwareBufferSubData(SHWBufferLink* _HWBuffer, u
 
 	//
 	// Copy data from old buffer to new buffer
-	GLsizeiptrARB copySize = min(size, HWBuffer->vbo_indicesSize);
+	if (cpyIndexCount == 0)
+		cpyIndexCount = (irr::u32)size;
+	GLsizeiptrARB copySize = min(cpyIndexCount * indexSize, HWBuffer->vbo_indicesSize);
 
 	extGlBindBuffer(GL_COPY_READ_BUFFER, prev_vbo_indicesID);
 	extGlBindBuffer(GL_COPY_WRITE_BUFFER, HWBuffer->vbo_indicesID);
@@ -506,12 +508,12 @@ bool COpenGLDriver::resizeIndexHardwareBufferSubData(SHWBufferLink* _HWBuffer, u
 	// Delete old buffer
 	extGlDeleteBuffers(1, &prev_vbo_indicesID);
 
-	HWBuffer->vbo_indicesSize = size;
+	HWBuffer->vbo_indicesSize = (GLuint)size;
 
 	return (!testGLError(__LINE__));
 }
 
-bool COpenGLDriver::resizeVertexHardwareBufferSubData(SHWBufferLink* _HWBuffer, u32 vertexCount) {
+bool COpenGLDriver::resizeVertexHardwareBufferSubData(SHWBufferLink* _HWBuffer, u32 vertexCount, u32 cpyVertexCount) {
 	SHWBufferLink_opengl* HWBuffer = (SHWBufferLink_opengl*)_HWBuffer;
 	if (!HWBuffer)
 		return false;
@@ -549,7 +551,9 @@ bool COpenGLDriver::resizeVertexHardwareBufferSubData(SHWBufferLink* _HWBuffer, 
 
 	//
 	// Copy data from old buffer to new buffer
-	GLsizeiptrARB copySize = min(size, HWBuffer->vbo_verticesSize);
+	if (cpyVertexCount == 0)
+		cpyVertexCount = (irr::u32)size;
+	GLsizeiptrARB copySize = min(cpyVertexCount * vertexSize, HWBuffer->vbo_verticesSize);
 
 	extGlBindBuffer(GL_COPY_READ_BUFFER, prev_vbo_vertexID);
 	extGlBindBuffer(GL_COPY_WRITE_BUFFER, HWBuffer->vbo_verticesID);
@@ -561,7 +565,7 @@ bool COpenGLDriver::resizeVertexHardwareBufferSubData(SHWBufferLink* _HWBuffer, 
 	// Delete old buffer
 	extGlDeleteBuffers(1, &prev_vbo_vertexID);
 
-	HWBuffer->vbo_verticesSize = size;
+	HWBuffer->vbo_verticesSize = (GLuint)size;
 
 	return (!testGLError(__LINE__));
 }

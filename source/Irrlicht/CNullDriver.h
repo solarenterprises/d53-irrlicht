@@ -380,8 +380,8 @@ namespace video
 		virtual bool getIndexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 indexCount, u32 offset, c8* resultPtr) { return false; }
 		virtual bool updateVertexHardwareBufferDirect(SHWBufferLink* HWBuffer, c8* vertexBuffer, u32 vertexCount) { return false; }
 		virtual bool updateIndexHardwareBufferDirect(SHWBufferLink* HWBuffer, c8* indices, u32 indexCount) { return false; }
-		virtual bool resizeIndexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 indexCount) { return false; }
-		virtual bool resizeVertexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 vertexCount) { return false; }
+		virtual bool resizeIndexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 indexCount, u32 cpyIndexCount = 0) { return false; }
+		virtual bool resizeVertexHardwareBufferSubData(SHWBufferLink* HWBuffer, u32 vertexCount, u32 cpyVertexCount = 0) { return false; }
 
 	protected:
 		//! updates hardware buffer if needed  (only some drivers can)
