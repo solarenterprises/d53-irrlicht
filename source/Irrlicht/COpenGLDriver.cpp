@@ -20,6 +20,8 @@
 
 #include "mt_opengl.h"
 
+using std::min;
+
 namespace irr
 {
 namespace video
@@ -496,7 +498,7 @@ bool COpenGLDriver::resizeIndexHardwareBufferSubData(SHWBufferLink* _HWBuffer, u
 	// Copy data from old buffer to new buffer
 	if (cpyIndexCount == 0)
 		cpyIndexCount = (irr::u32)size;
-	GLsizeiptrARB copySize = std::min((GLuint)cpyIndexCount * indexSize, HWBuffer->vbo_indicesSize);
+	GLsizeiptrARB copySize = (GLsizeiptrARB)min((GLuint)cpyIndexCount * (GLuint)indexSize, HWBuffer->vbo_indicesSize);
 
 	extGlBindBuffer(GL_COPY_READ_BUFFER, prev_vbo_indicesID);
 	extGlBindBuffer(GL_COPY_WRITE_BUFFER, HWBuffer->vbo_indicesID);
@@ -553,7 +555,7 @@ bool COpenGLDriver::resizeVertexHardwareBufferSubData(SHWBufferLink* _HWBuffer, 
 	// Copy data from old buffer to new buffer
 	if (cpyVertexCount == 0)
 		cpyVertexCount = (irr::u32)size;
-	GLsizeiptrARB copySize = std::min((GLuint)cpyVertexCount * vertexSize, HWBuffer->vbo_verticesSize);
+	GLsizeiptrARB copySize = min((GLuint)cpyVertexCount * vertexSize, HWBuffer->vbo_verticesSize);
 
 	extGlBindBuffer(GL_COPY_READ_BUFFER, prev_vbo_vertexID);
 	extGlBindBuffer(GL_COPY_WRITE_BUFFER, HWBuffer->vbo_verticesID);

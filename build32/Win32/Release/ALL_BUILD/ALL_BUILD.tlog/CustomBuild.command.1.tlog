@@ -1,0 +1,10 @@
+^F:\DISTRICT53\IRRLICHTMT\CMAKELISTS.TXT
+setlocal
+C:\CMake\bin\cmake.exe -SF:/district53/irrlichtmt -BF:/district53/irrlichtmt/build32 --check-stamp-file F:/district53/irrlichtmt/build32/CMakeFiles/generate.stamp
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd
