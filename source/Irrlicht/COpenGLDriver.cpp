@@ -38,6 +38,13 @@ COpenGLDriver::COpenGLDriver(const SIrrlichtCreationParameters& params, io::IFil
 #ifdef _DEBUG
 	setDebugName("COpenGLDriver");
 #endif
+
+	GLint maxVertexBufferSize;
+	glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, &maxVertexBufferSize);
+	GLint maxIndexBufferSize;
+	glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &maxIndexBufferSize);
+	this->maxVertexBufferSize = maxVertexBufferSize;
+	this->maxIndexBufferSize = maxIndexBufferSize;	
 }
 
 bool COpenGLDriver::initDriver()
@@ -1416,85 +1423,112 @@ void COpenGLDriver::renderArray(const void* indexList, u32 primitiveCount,
 		}
 	}
 
-	switch (pType)
-	{
-		case scene::EPT_POINTS:
-		case scene::EPT_POINT_SPRITES:
+	u32 indexCount = primitiveCount * 3;
+	u32 drawCount = std::ceil((double)indexCount / maxVertexBufferSize);
+	if (drawCount == 0)
+		return;
+
+	bool useDrawRangeElements = drawCount > 1;
+	u32 add_primitive_count = indexCount / drawCount;
+	if (add_primitive_count % 3 != 0) {
+		add_primitive_count = add_primitive_count - add_primitive_count % 3;
+		drawCount++;
+	}
+	
+	for (u32 drawIndex = 0; drawIndex < drawCount; drawIndex++) {
+		u32 start = 0;
+		u32 end = 0;
+		if (useDrawRangeElements) {
+			start = drawIndex * add_primitive_count;
+			if (start >= indexCount)
+				return;
+
+			end = start + add_primitive_count;
+			if (end > indexCount)
+				end = indexCount;
+		} else
+			end = indexCount;
+
+		switch (pType)
 		{
-#ifdef GL_ARB_point_sprite
-			if (pType==scene::EPT_POINT_SPRITES && FeatureAvailable[IRR_ARB_point_sprite])
-				glEnable(GL_POINT_SPRITE_ARB);
-#endif
-
-			// prepare size and attenuation (where supported)
-			GLfloat particleSize=Material.Thickness;
-//			if (AntiAlias)
-//				particleSize=core::clamp(particleSize, DimSmoothedPoint[0], DimSmoothedPoint[1]);
-//			else
-				particleSize=core::clamp(particleSize, DimAliasedPoint[0], DimAliasedPoint[1]);
-#if defined(GL_VERSION_1_4) || defined(GL_ARB_point_parameters) || defined(GL_EXT_point_parameters) || defined(GL_SGIS_point_parameters)
-			const float att[] = {1.0f, 1.0f, 0.0f};
-#if defined(GL_VERSION_1_4)
-			extGlPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, att);
-//			extGlPointParameterf(GL_POINT_SIZE_MIN,1.f);
-			extGlPointParameterf(GL_POINT_SIZE_MAX, particleSize);
-			extGlPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE, 1.0f);
-#elif defined(GL_ARB_point_parameters)
-			extGlPointParameterfv(GL_POINT_DISTANCE_ATTENUATION_ARB, att);
-//			extGlPointParameterf(GL_POINT_SIZE_MIN_ARB,1.f);
-			extGlPointParameterf(GL_POINT_SIZE_MAX_ARB, particleSize);
-			extGlPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE_ARB, 1.0f);
-#elif defined(GL_EXT_point_parameters)
-			extGlPointParameterfv(GL_DISTANCE_ATTENUATION_EXT, att);
-//			extGlPointParameterf(GL_POINT_SIZE_MIN_EXT,1.f);
-			extGlPointParameterf(GL_POINT_SIZE_MAX_EXT, particleSize);
-			extGlPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE_EXT, 1.0f);
-#elif defined(GL_SGIS_point_parameters)
-			extGlPointParameterfv(GL_DISTANCE_ATTENUATION_SGIS, att);
-//			extGlPointParameterf(GL_POINT_SIZE_MIN_SGIS,1.f);
-			extGlPointParameterf(GL_POINT_SIZE_MAX_SGIS, particleSize);
-			extGlPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE_SGIS, 1.0f);
-#endif
-#endif
-			glPointSize(particleSize);
-
-#ifdef GL_ARB_point_sprite
-			if (pType == scene::EPT_POINT_SPRITES && FeatureAvailable[IRR_ARB_point_sprite])
+			case scene::EPT_POINTS:
+			case scene::EPT_POINT_SPRITES:
 			{
-				CacheHandler->setActiveTexture(GL_TEXTURE0_ARB);
-				glTexEnvf(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE, GL_TRUE);
-			}
-#endif
-			glDrawArrays(GL_POINTS, 0, primitiveCount);
-#ifdef GL_ARB_point_sprite
-			if (pType==scene::EPT_POINT_SPRITES && FeatureAvailable[IRR_ARB_point_sprite])
-			{
-				glDisable(GL_POINT_SPRITE_ARB);
+	#ifdef GL_ARB_point_sprite
+				if (pType==scene::EPT_POINT_SPRITES && FeatureAvailable[IRR_ARB_point_sprite])
+					glEnable(GL_POINT_SPRITE_ARB);
+	#endif
 
-				CacheHandler->setActiveTexture(GL_TEXTURE0_ARB);
-				glTexEnvf(GL_POINT_SPRITE_ARB,GL_COORD_REPLACE, GL_FALSE);
+				// prepare size and attenuation (where supported)
+				GLfloat particleSize=Material.Thickness;
+	//			if (AntiAlias)
+	//				particleSize=core::clamp(particleSize, DimSmoothedPoint[0], DimSmoothedPoint[1]);
+	//			else
+					particleSize=core::clamp(particleSize, DimAliasedPoint[0], DimAliasedPoint[1]);
+	#if defined(GL_VERSION_1_4) || defined(GL_ARB_point_parameters) || defined(GL_EXT_point_parameters) || defined(GL_SGIS_point_parameters)
+				const float att[] = {1.0f, 1.0f, 0.0f};
+	#if defined(GL_VERSION_1_4)
+				extGlPointParameterfv(GL_POINT_DISTANCE_ATTENUATION, att);
+	//			extGlPointParameterf(GL_POINT_SIZE_MIN,1.f);
+				extGlPointParameterf(GL_POINT_SIZE_MAX, particleSize);
+				extGlPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE, 1.0f);
+	#elif defined(GL_ARB_point_parameters)
+				extGlPointParameterfv(GL_POINT_DISTANCE_ATTENUATION_ARB, att);
+	//			extGlPointParameterf(GL_POINT_SIZE_MIN_ARB,1.f);
+				extGlPointParameterf(GL_POINT_SIZE_MAX_ARB, particleSize);
+				extGlPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE_ARB, 1.0f);
+	#elif defined(GL_EXT_point_parameters)
+				extGlPointParameterfv(GL_DISTANCE_ATTENUATION_EXT, att);
+	//			extGlPointParameterf(GL_POINT_SIZE_MIN_EXT,1.f);
+				extGlPointParameterf(GL_POINT_SIZE_MAX_EXT, particleSize);
+				extGlPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE_EXT, 1.0f);
+	#elif defined(GL_SGIS_point_parameters)
+				extGlPointParameterfv(GL_DISTANCE_ATTENUATION_SGIS, att);
+	//			extGlPointParameterf(GL_POINT_SIZE_MIN_SGIS,1.f);
+				extGlPointParameterf(GL_POINT_SIZE_MAX_SGIS, particleSize);
+				extGlPointParameterf(GL_POINT_FADE_THRESHOLD_SIZE_SGIS, 1.0f);
+	#endif
+	#endif
+				glPointSize(particleSize);
+
+	#ifdef GL_ARB_point_sprite
+				if (pType == scene::EPT_POINT_SPRITES && FeatureAvailable[IRR_ARB_point_sprite])
+				{
+					CacheHandler->setActiveTexture(GL_TEXTURE0_ARB);
+					glTexEnvf(GL_POINT_SPRITE_ARB, GL_COORD_REPLACE, GL_TRUE);
+				}
+	#endif
+				glDrawArrays(GL_POINTS, 0, primitiveCount);
+	#ifdef GL_ARB_point_sprite
+				if (pType==scene::EPT_POINT_SPRITES && FeatureAvailable[IRR_ARB_point_sprite])
+				{
+					glDisable(GL_POINT_SPRITE_ARB);
+
+					CacheHandler->setActiveTexture(GL_TEXTURE0_ARB);
+					glTexEnvf(GL_POINT_SPRITE_ARB,GL_COORD_REPLACE, GL_FALSE);
+				}
+	#endif
 			}
-#endif
+			break;
+			case scene::EPT_LINE_STRIP:
+				glDrawElements(GL_LINE_STRIP, primitiveCount+1, indexSize, indexList);
+				break;
+			case scene::EPT_LINE_LOOP:
+				glDrawElements(GL_LINE_LOOP, primitiveCount, indexSize, indexList);
+				break;
+			case scene::EPT_LINES:
+				glDrawElements(GL_LINES, primitiveCount*2, indexSize, indexList);
+				break;
+			case scene::EPT_TRIANGLE_STRIP:
+				glDrawElements(GL_TRIANGLE_STRIP, primitiveCount+2, indexSize, indexList);
+				break;
+			case scene::EPT_TRIANGLE_FAN:
+				glDrawElements(GL_TRIANGLE_FAN, primitiveCount+2, indexSize, indexList);
+				break;
+			case scene::EPT_TRIANGLES:
+				glDrawElements(GL_TRIANGLES, end-start, indexSize, (GLuint*)indexList+start);
+				break;
 		}
-			break;
-		case scene::EPT_LINE_STRIP:
-			glDrawElements(GL_LINE_STRIP, primitiveCount+1, indexSize, indexList);
-			break;
-		case scene::EPT_LINE_LOOP:
-			glDrawElements(GL_LINE_LOOP, primitiveCount, indexSize, indexList);
-			break;
-		case scene::EPT_LINES:
-			glDrawElements(GL_LINES, primitiveCount*2, indexSize, indexList);
-			break;
-		case scene::EPT_TRIANGLE_STRIP:
-			glDrawElements(GL_TRIANGLE_STRIP, primitiveCount+2, indexSize, indexList);
-			break;
-		case scene::EPT_TRIANGLE_FAN:
-			glDrawElements(GL_TRIANGLE_FAN, primitiveCount+2, indexSize, indexList);
-			break;
-		case scene::EPT_TRIANGLES:
-			glDrawElements(GL_TRIANGLES, primitiveCount*3, indexSize, indexList);
-			break;
 	}
 }
 

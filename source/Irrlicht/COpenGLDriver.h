@@ -481,6 +481,9 @@ namespace video
 		static const u16 Quad2DIndices[4];
 
 		IContextManager* ContextManager;
+
+		size_t maxVertexBufferSize;
+		size_t maxIndexBufferSize;
 	};
 
 } // end namespace video
