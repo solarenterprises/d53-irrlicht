@@ -449,7 +449,7 @@ bool COpenGLDriver::resizeIndexHardwareBufferSubData(SHWBufferLink* _HWBuffer, u
 
 	if (!FeatureAvailable[IRR_ARB_vertex_buffer_object])
 		return false;
-
+		
 	const scene::IMeshBuffer* mb = HWBuffer->MeshBuffer;
 
 	GLenum indexSize;
@@ -500,12 +500,38 @@ bool COpenGLDriver::resizeIndexHardwareBufferSubData(SHWBufferLink* _HWBuffer, u
 		cpyIndexCount = (irr::u32)size;
 	GLsizeiptrARB copySize = (GLsizeiptrARB)min((GLuint)cpyIndexCount * (GLuint)indexSize, HWBuffer->vbo_indicesSize);
 
-	extGlBindBuffer(GL_COPY_READ_BUFFER, prev_vbo_indicesID);
-	extGlBindBuffer(GL_COPY_WRITE_BUFFER, HWBuffer->vbo_indicesID);
-	extGlCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER,
-		0, // Source offset
-		0, // Destination offset
-		copySize); // Size of data to copy in bytes
+	if (FeatureAvailable[IRR_ARB_copy_buffer]) {
+		extGlBindBuffer(GL_COPY_READ_BUFFER, prev_vbo_indicesID);
+		extGlBindBuffer(GL_COPY_WRITE_BUFFER, HWBuffer->vbo_indicesID);
+		extGlCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER,
+			0, // Source offset
+			0, // Destination offset
+			copySize); // Size of data to copy in bytes
+	} else {		
+		// Map the destination buffer to client's address space
+		void* dstData = extGlMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+		if (dstData == nullptr) {
+			os::Printer::log("Failed to map destination buffer", core::stringc(__LINE__).c_str(), ELL_ERROR);
+			return false;
+		}
+
+		// 
+		// Get existing buffer
+		extGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, prev_vbo_indicesID);
+		void* srcData = extGlMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_READ_ONLY);
+		if (srcData == nullptr) {
+			os::Printer::log("Failed to map source buffer", core::stringc(__LINE__).c_str(), ELL_ERROR);
+			return false;
+		}
+
+		//
+		// Copy to new buffer
+		memcpy(dstData, srcData, copySize);
+
+		extGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+		extGlBindBuffer(GL_ELEMENT_ARRAY_BUFFER, HWBuffer->vbo_indicesID);
+		extGlUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+	}
 
 	// Delete old buffer
 	extGlDeleteBuffers(1, &prev_vbo_indicesID);
@@ -557,12 +583,38 @@ bool COpenGLDriver::resizeVertexHardwareBufferSubData(SHWBufferLink* _HWBuffer, 
 		cpyVertexCount = (irr::u32)size;
 	GLsizeiptrARB copySize = min((GLuint)cpyVertexCount * vertexSize, HWBuffer->vbo_verticesSize);
 
-	extGlBindBuffer(GL_COPY_READ_BUFFER, prev_vbo_vertexID);
-	extGlBindBuffer(GL_COPY_WRITE_BUFFER, HWBuffer->vbo_verticesID);
-	extGlCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER,
-		0, // Source offset
-		0, // Destination offset
-		copySize); // Size of data to copy in bytes
+	if (FeatureAvailable[IRR_ARB_copy_buffer]) {
+		extGlBindBuffer(GL_COPY_READ_BUFFER, prev_vbo_vertexID);
+		extGlBindBuffer(GL_COPY_WRITE_BUFFER, HWBuffer->vbo_verticesID);
+		extGlCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER,
+			0, // Source offset
+			0, // Destination offset
+			copySize); // Size of data to copy in bytes
+	} else {		
+		// Map the destination buffer to client's address space
+		void* dstData = extGlMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+		if (dstData == nullptr) {
+			os::Printer::log("Failed to map destination buffer", core::stringc(__LINE__).c_str(), ELL_ERROR);
+			return false;
+		}
+
+		// 
+		// Get existing buffer
+		extGlBindBuffer(GL_ARRAY_BUFFER, prev_vbo_vertexID);
+		void* srcData = extGlMapBuffer(GL_ARRAY_BUFFER, GL_READ_ONLY);
+		if (srcData == nullptr) {
+			os::Printer::log("Failed to map source buffer", core::stringc(__LINE__).c_str(), ELL_ERROR);
+			return false;
+		}
+
+		//
+		// Copy to new buffer
+		memcpy(dstData, srcData, copySize);
+
+		extGlUnmapBuffer(GL_ARRAY_BUFFER);
+		extGlBindBuffer(GL_ARRAY_BUFFER, HWBuffer->vbo_verticesID);
+		extGlUnmapBuffer(GL_ARRAY_BUFFER);
+	}
 
 	// Delete old buffer
 	extGlDeleteBuffers(1, &prev_vbo_vertexID);

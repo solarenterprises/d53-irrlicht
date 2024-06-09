@@ -23,3 +23,5 @@ scripts/glext.h
 
 # vscode cmake plugin
 build/*
+build32/*
+bin/*

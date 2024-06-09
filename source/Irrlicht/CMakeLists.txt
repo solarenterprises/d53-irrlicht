@@ -2,8 +2,14 @@ if(NOT ANDROID AND NOT APPLE)
 	set(DEFAULT_SDL2 FALSE)
 endif()
 
+
+
 option(BUILD_SHARED_LIBS "Build shared library" TRUE)
 option(USE_SDL2 "Use the SDL2 backend" ${DEFAULT_SDL2})
+
+if (APPLE)
+	set(USE_SDL2 TRUE)
+endif()
 
 # Compiler flags
 
@@ -121,6 +127,7 @@ if(USE_SDL2)
 elseif(DEVICE STREQUAL "SDL")
 	message(FATAL_ERROR "SDL was used but not enabled?!")
 endif()
+message("USE_SDL2 ${USE_SDL2}")
 
 add_definitions("-D_IRR_COMPILE_WITH_${DEVICE}_DEVICE_")
 
