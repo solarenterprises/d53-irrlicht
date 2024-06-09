@@ -82,6 +82,8 @@ namespace video
 		//! Returns amount of textures currently loaded
 		u32 getTextureCount() const override;
 
+		virtual size_t getGPUFreeVBOMemory() { return 0; }
+
 		ITexture* addTexture(const core::dimension2d<u32>& size, const io::path& name, ECOLOR_FORMAT format = ECF_A8R8G8B8) override;
 
 		ITexture* addTexture(const io::path& name, IImage* image) override;

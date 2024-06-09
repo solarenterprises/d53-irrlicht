@@ -648,6 +648,28 @@ bool COpenGLExtensionHandler::queryFeature(E_VIDEO_DRIVER_FEATURE feature) const
 }
 
 
+size_t COpenGLExtensionHandler::getGPUFreeVBOMemory() {
+
+	if (FeatureAvailable[IRR_NVX_gpu_memory_info])
+	{
+		// undocumented flags, so use the RAW values
+		GLint val;
+		glGetIntegerv(0x9049, &val);
+		return val;
+	}
+
+	#ifdef GL_ATI_meminfo
+		if (FeatureAvailable[IRR_ATI_meminfo])
+		{
+			GLint val[4];
+			glGetIntegerv(GL_VBO_FREE_MEMORY_ATI, val);
+			return val[0];
+		}
+	#endif
+
+	return 0;
+}
+
 }
 }
 

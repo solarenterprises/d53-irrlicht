@@ -1009,6 +1009,8 @@ class COpenGLExtensionHandler
 		return FeatureAvailable[feature];
 	}
 
+	size_t getGPUFreeVBOMemory();
+
 	//! show all features with availability
 	void dump(ELOG_LEVEL logLevel) const;
 
