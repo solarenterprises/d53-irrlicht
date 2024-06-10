@@ -31,6 +31,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
+set(MSVCRT_LIB "")
 if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
 	set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 	set(CMAKE_CXX_FLAGS_DEBUG "-g")
@@ -49,6 +50,7 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
 	endif()
 
 elseif(MSVC)
+	set(MSVCRT_LIB "$<$<CONFIG:DEBUG>:msvcrtd.lib> $<$<CONFIG:RELEASE>:msvcrt.lib>")
 	# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 		# message("HELLO WORLD")
 		# string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " msvcrtd.lib")
@@ -553,8 +555,7 @@ target_link_libraries(IrrlichtMt PRIVATE
 	"$<$<PLATFORM_ID:Windows>:winmm>"
 	"$<$<BOOL:${USE_X11}>:${X11_X11_LIB}>"
 	"$<$<BOOL:${USE_X11}>:${X11_Xi_LIB}>"
-	"$<$<CONFIG:DEBUG>:msvcrtd.lib>"
-    "$<$<CONFIG:RELEASE>:msvcrt.lib>"
+	${MSVCRT_LIB}
 )
 
 if (CMAKE_CONFIGURATION_TYPES)
