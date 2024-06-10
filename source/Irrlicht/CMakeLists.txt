@@ -50,7 +50,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
 	endif()
 
 elseif(MSVC)
-	set(MSVCRT_LIB "$<$<CONFIG:DEBUG>:msvcrtd.lib> $<$<CONFIG:RELEASE>:msvcrt.lib>")
+	set(MSVCRT_LIB 
+	"$<$<CONFIG:DEBUG>:msvcrtd.lib>" 
+	"$<$<CONFIG:RELEASE>:msvcrt.lib>" 
+	"$<$<CONFIG:RELWITHDEBINFO>:msvcrt.lib>")
 	# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 		# message("HELLO WORLD")
 		# string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " msvcrtd.lib")

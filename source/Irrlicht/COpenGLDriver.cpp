@@ -38,13 +38,6 @@ COpenGLDriver::COpenGLDriver(const SIrrlichtCreationParameters& params, io::IFil
 #ifdef _DEBUG
 	setDebugName("COpenGLDriver");
 #endif
-
-	GLint maxVertexBufferSize;
-	glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, &maxVertexBufferSize);
-	GLint maxIndexBufferSize;
-	glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &maxIndexBufferSize);
-	this->maxVertexBufferSize = maxVertexBufferSize;
-	this->maxIndexBufferSize = maxIndexBufferSize;	
 }
 
 bool COpenGLDriver::initDriver()
@@ -60,6 +53,13 @@ bool COpenGLDriver::initDriver()
 #if defined(_IRR_COMPILE_WITH_WINDOWS_DEVICE_) || defined(_IRR_COMPILE_WITH_X11_DEVICE_)
 	extGlSwapInterval(Params.Vsync ? 1 : 0);
 #endif
+
+	GLint maxVertexBufferSize;
+	glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, &maxVertexBufferSize);
+	GLint maxIndexBufferSize;
+	glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &maxIndexBufferSize);
+	this->maxVertexBufferSize = maxVertexBufferSize;
+	this->maxIndexBufferSize = maxIndexBufferSize;
 
 	return true;
 }
