@@ -1424,11 +1424,11 @@ void COpenGLDriver::renderArray(const void* indexList, u32 primitiveCount,
 	}
 
 	u32 indexCount = primitiveCount * 3;
-	u32 drawCount = std::ceil((double)indexCount / maxVertexBufferSize);
+	u32 drawCount = (u32)std::ceil((double)indexCount / maxVertexBufferSize);
 	if (drawCount == 0)
 		return;
 
-	bool useDrawRangeElements = drawCount > 1;
+	bool useDrawOffsets = drawCount > 1;
 	u32 add_primitive_count = indexCount / drawCount;
 	if (add_primitive_count % 3 != 0) {
 		add_primitive_count = add_primitive_count - add_primitive_count % 3;
@@ -1438,7 +1438,7 @@ void COpenGLDriver::renderArray(const void* indexList, u32 primitiveCount,
 	for (u32 drawIndex = 0; drawIndex < drawCount; drawIndex++) {
 		u32 start = 0;
 		u32 end = 0;
-		if (useDrawRangeElements) {
+		if (useDrawOffsets) {
 			start = drawIndex * add_primitive_count;
 			if (start >= indexCount)
 				return;

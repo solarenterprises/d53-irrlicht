@@ -49,11 +49,17 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "^(GNU|Clang|AppleClang)$")
 	endif()
 
 elseif(MSVC)
-	if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-		string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " msvcrtd.lib")
-	else()
-		string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " msvcrt.lib") # ???? fuck off
-	endif()
+	# if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+		# message("HELLO WORLD")
+		# string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " msvcrtd.lib")
+	# else()
+		# message("HELLO WORLD2")
+		# string(APPEND CMAKE_CXX_STANDARD_LIBRARIES " msvcrt.lib") # ???? fuck off
+	# endif()
+	
+	# string(APPEND CMAKE_CXX_STANDARD_LIBRARIES 
+        # "$<$<CONFIG:Debug>: msvcrtd.lib>"
+        # "$<$<CONFIG:Release>: msvcrt.lib>")
 
 	add_compile_options(/GR- /Zl)
 
@@ -547,7 +553,15 @@ target_link_libraries(IrrlichtMt PRIVATE
 	"$<$<PLATFORM_ID:Windows>:winmm>"
 	"$<$<BOOL:${USE_X11}>:${X11_X11_LIB}>"
 	"$<$<BOOL:${USE_X11}>:${X11_Xi_LIB}>"
+	"$<$<CONFIG:DEBUG>:msvcrtd.lib>"
+    "$<$<CONFIG:RELEASE>:msvcrt.lib>"
 )
+
+if (CMAKE_CONFIGURATION_TYPES)
+    foreach(config_type ${CMAKE_CONFIGURATION_TYPES})
+        message(STATUS "Configuration Type: ${config_type}")
+    endforeach()
+endif()
 
 if(WIN32)
 	target_compile_definitions(IrrlichtMt INTERFACE _IRR_WINDOWS_API_) # used in _IRR_DEBUG_BREAK_IF definition in a public header
