@@ -77,13 +77,13 @@ void CDummyTransformationSceneNode::setScale(const core::vector3df& scale)
 	RelativeScale = scale;
 }
 
-const core::vector3df& CDummyTransformationSceneNode::getRotation() const
+const core::quaternion& CDummyTransformationSceneNode::getRotation() const
 {
 	os::Printer::log("CDummyTransformationSceneNode::getRotation() does not contain the relative transformation.", ELL_DEBUG);
 	return RelativeRotation;
 }
 
-void CDummyTransformationSceneNode::setRotation(const core::vector3df& rotation)
+void CDummyTransformationSceneNode::setRotation(const core::quaternion& rotation)
 {
 	os::Printer::log("CDummyTransformationSceneNode::setRotation() does not affect the relative transformation.", ELL_DEBUG);
 	RelativeRotation = rotation;

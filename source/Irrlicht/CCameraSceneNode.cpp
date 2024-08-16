@@ -122,7 +122,7 @@ void CCameraSceneNode::setTarget(const core::vector3df& pos)
 	if(TargetAndRotationAreBound)
 	{
 		const core::vector3df toTarget = Target - getAbsolutePosition();
-		ISceneNode::setRotation(toTarget.getHorizontalAngle());
+		ISceneNode::fromEuler(toTarget.getHorizontalAngle());
 	}
 }
 
@@ -132,10 +132,10 @@ void CCameraSceneNode::setTarget(const core::vector3df& pos)
 If the camera's target and rotation are bound ( @see bindTargetAndRotation() )
 then calling this will also change the camera's target to match the rotation.
 \param rotation New rotation of the node in degrees. */
-void CCameraSceneNode::setRotation(const core::vector3df& rotation)
+void CCameraSceneNode::setRotation(const core::quaternion& rotation)
 {
 	if(TargetAndRotationAreBound)
-		Target = getAbsolutePosition() + rotation.rotationToDirection();
+		Target = getAbsolutePosition() + rotation * core::vector3df(1, 0, 0);
 
 	ISceneNode::setRotation(rotation);
 }

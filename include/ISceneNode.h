@@ -42,7 +42,7 @@ namespace scene
 		//! Constructor
 		ISceneNode(ISceneNode* parent, ISceneManager* mgr, s32 id=-1,
 				const core::vector3df& position = core::vector3df(0,0,0),
-				const core::vector3df& rotation = core::vector3df(0,0,0),
+				const core::quaternion& rotation = core::quaternion(0,0,0,1),
 				const core::vector3df& scale = core::vector3df(1.0f, 1.0f, 1.0f))
 			: RelativeTranslation(position), RelativeRotation(rotation), RelativeScale(scale),
 				Parent(0), SceneManager(mgr), ID(id),
@@ -186,8 +186,9 @@ namespace scene
 		virtual core::matrix4 getRelativeTransformation() const
 		{
 			core::matrix4 mat;
-			mat.setRotationDegrees(RelativeRotation);
-			mat.setTranslation(RelativeTranslation);
+			//mat.setRotationDegrees(RelativeRotation);
+			RelativeRotation.getMatrix(mat, RelativeTranslation);
+			//mat.setTranslation(RelativeTranslation);
 
 			if (RelativeScale != core::vector3df(1.f,1.f,1.f))
 			{
@@ -372,21 +373,33 @@ namespace scene
 		}
 
 
+		virtual const core::quaternion& getRotation() const
+		{
+			return RelativeRotation;
+		}
+
 		//! Gets the rotation of the node relative to its parent.
 		/** Note that this is the relative rotation of the node.
 		If you want the absolute rotation, use
 		getAbsoluteTransformation().getRotation()
 		\return Current relative rotation of the scene node. */
-		virtual const core::vector3df& getRotation() const
+		virtual const core::vector3df getEuler() const
 		{
-			return RelativeRotation;
+			core::vector3df euler;
+			RelativeRotation.toEuler(euler);
+			return euler * core::RADTODEG;
 		}
 
 
 		//! Sets the rotation of the node relative to its parent.
 		/** This only modifies the relative rotation of the node.
 		\param rotation New rotation of the node in degrees. */
-		virtual void setRotation(const core::vector3df& rotation)
+		virtual void fromEuler(const core::vector3df& rotation)
+		{
+			RelativeRotation = core::quaternion(rotation*core::DEGTORAD);
+		}
+
+		virtual void setRotation(const core::quaternion& rotation)
 		{
 			RelativeRotation = rotation;
 		}
@@ -519,6 +532,20 @@ namespace scene
 				AbsoluteTransformation = getRelativeTransformation();
 		}
 
+		virtual void updateAbsolutePositionRecursive()
+		{
+			if (Parent)
+			{
+				AbsoluteTransformation =
+					Parent->getAbsoluteTransformation() * getRelativeTransformation();
+			}
+			else
+				AbsoluteTransformation = getRelativeTransformation();
+
+			for (auto c : Children)
+				c->updateAbsolutePositionRecursive();
+		}
+
 
 		//! Returns the parent of this scene node
 		/** \return A pointer to the parent. */
@@ -601,7 +628,8 @@ namespace scene
 		core::vector3df RelativeTranslation;
 
 		//! Relative rotation of the scene node.
-		core::vector3df RelativeRotation;
+		//core::vector3df RelativeRotation;
+		core::quaternion RelativeRotation;
 
 		//! Relative scale of the scene node.
 		core::vector3df RelativeScale;

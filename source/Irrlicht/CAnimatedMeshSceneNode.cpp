@@ -28,7 +28,7 @@ namespace scene
 CAnimatedMeshSceneNode::CAnimatedMeshSceneNode(IAnimatedMesh* mesh,
 		ISceneNode* parent, ISceneManager* mgr, s32 id,
 		const core::vector3df& position,
-		const core::vector3df& rotation,
+		const core::quaternion& rotation,
 		const core::vector3df& scale)
 : IAnimatedMeshSceneNode(parent, mgr, id, position, rotation, scale), Mesh(0),
 	StartFrame(0), EndFrame(0), FramesPerSecond(0.025f),
@@ -718,16 +718,14 @@ void CAnimatedMeshSceneNode::animateJoints(bool CalculateAbsolutePositions)
 
 				//Code is slow, needs to be fixed up
 
-				const core::quaternion RotationStart(PretransitingSave[n].getRotationDegrees()*core::DEGTORAD);
-				const core::quaternion RotationEnd(JointChildSceneNodes[n]->getRotation()*core::DEGTORAD);
+				//const core::quaternion RotationStart(PretransitingSave[n].getRotationDegrees()*core::DEGTORAD);
+				const core::quaternion RotationStart = core::quaternion(0,0,0,1) * PretransitingSave[n];
+				const core::quaternion RotationEnd(JointChildSceneNodes[n]->getRotation());
 
 				core::quaternion QRotation;
 				QRotation.slerp(RotationStart, RotationEnd, TransitingBlend);
 
-				core::vector3df tmpVector;
-				QRotation.toEuler(tmpVector);
-				tmpVector*=core::RADTODEG; //convert from radians back to degrees
-				JointChildSceneNodes[n]->setRotation( tmpVector );
+				JointChildSceneNodes[n]->setRotation( QRotation );
 
 				//------Scale------
 

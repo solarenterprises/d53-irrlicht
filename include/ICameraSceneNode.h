@@ -26,7 +26,7 @@ namespace scene
 		//! Constructor
 		ICameraSceneNode(ISceneNode* parent, ISceneManager* mgr, s32 id,
 			const core::vector3df& position = core::vector3df(0,0,0),
-			const core::vector3df& rotation = core::vector3df(0,0,0),
+			const core::quaternion& rotation = core::quaternion(0,0,0,1),
 			const core::vector3df& scale = core::vector3df(1.0f,1.0f,1.0f))
 			: ISceneNode(parent, mgr, id, position, rotation, scale), IsOrthogonal(false) {}
 
@@ -89,7 +89,7 @@ namespace scene
 		bindTargetAndRotation() ) then calling this will also change
 		the camera's target to match the rotation.
 		\param rotation New rotation of the node in degrees. */
-		void setRotation(const core::vector3df& rotation) override =0;
+		void setRotation(const core::quaternion& rotation) override =0;
 
 		//! Gets the current look at target of the camera
 		/** \return The current look at target of the camera, in world co-ordinates */

@@ -23,7 +23,7 @@ namespace scene
 		//! constructor
 		CAnimatedMeshSceneNode(IAnimatedMesh* mesh, ISceneNode* parent, ISceneManager* mgr,	s32 id,
 			const core::vector3df& position = core::vector3df(0,0,0),
-			const core::vector3df& rotation = core::vector3df(0,0,0),
+			const core::quaternion& rotation = core::quaternion(0,0,0,1),
 			const core::vector3df& scale = core::vector3df(1.0f, 1.0f, 1.0f));
 
 		//! destructor

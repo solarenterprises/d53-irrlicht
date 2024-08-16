@@ -1340,16 +1340,41 @@ void CSkinnedMesh::recoverJointsFromMesh(core::array<IBoneSceneNode*> &jointChil
 	{
 		IBoneSceneNode* node=jointChildSceneNodes[i];
 		SJoint *joint=AllJoints[i];
-		node->setPosition(joint->LocalAnimatedMatrix.getTranslation());
-		node->setRotation(joint->LocalAnimatedMatrix.getRotationDegrees());
-		node->setScale(joint->LocalAnimatedMatrix.getScale());
+
+		node->setPosition(joint->Animatedposition);
+		node->setRotation(joint->Animatedrotation);
+		node->setScale(joint->Animatedscale);
 
 		node->positionHint=joint->positionHint;
 		node->scaleHint=joint->scaleHint;
 		node->rotationHint=joint->rotationHint;
-
-		node->updateAbsolutePosition();
 	}
+
+	IBoneSceneNode* top = nullptr;
+	for (u32 i=0; i<jointChildSceneNodes.size(); ++i)
+	{
+		IBoneSceneNode* node=jointChildSceneNodes[i];
+		if (!top || !node->getParent()) {
+			top = node;
+			continue;
+		}
+
+		bool is_child = false;
+		for (u32 j=0; j<jointChildSceneNodes.size(); ++j)
+			if (jointChildSceneNodes[j] == node->getParent()) {
+				is_child = true;
+				break;
+			}
+		if (is_child)
+			continue;
+
+		top = node;
+
+		
+	}
+
+	if (top)
+		top->updateAbsolutePositionRecursive();
 }
 
 
@@ -1360,9 +1385,9 @@ void CSkinnedMesh::transferJointsToMesh(const core::array<IBoneSceneNode*> &join
 		const IBoneSceneNode* const node=jointChildSceneNodes[i];
 		SJoint *joint=AllJoints[i];
 
-		joint->LocalAnimatedMatrix.setRotationDegrees(node->getRotation());
-		joint->LocalAnimatedMatrix.setTranslation(node->getPosition());
-		joint->LocalAnimatedMatrix *= core::matrix4().setScale(node->getScale());
+		joint->Animatedposition = node->getPosition();
+		joint->Animatedrotation = node->getRotation();
+		joint->Animatedscale = node->getScale();
 
 		joint->positionHint=node->positionHint;
 		joint->scaleHint=node->scaleHint;
@@ -1373,6 +1398,8 @@ void CSkinnedMesh::transferJointsToMesh(const core::array<IBoneSceneNode*> &join
 	// Make sure we recalc the next frame
 	LastAnimatedFrame=-1;
 	SkinnedLastFrame=false;
+
+	buildAllLocalAnimatedMatrices();
 }
 
 

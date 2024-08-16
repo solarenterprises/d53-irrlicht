@@ -64,7 +64,7 @@ namespace scene
 		If the camera's target and rotation are bound ( @see bindTargetAndRotation() )
 		then calling this will also change the camera's target to match the rotation.
 		\param rotation New rotation of the node in degrees. */
-		void setRotation(const core::vector3df& rotation) override;
+		void setRotation(const core::quaternion& rotation) override;
 
 		//! Gets the current look at target of the camera
 		/** \return The current look at target of the camera */
